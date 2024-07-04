@@ -77,32 +77,33 @@ int main(int argc, char const *argv[])
     uint16_t meas_period;
     bme680_get_profile_dur(&meas_period, &gas_sensor);
     struct bme680_field_data data;
-    sleep(1);
+    sleep(0.1);
     rslt = bme680_get_sensor_data(&data, &gas_sensor);
+    float hectoPascal = 0.750063755419211;
     for (int i = 1; i < argc; i++) {
             if (strcmp(argv[i], "-t") == 0) {
-                printf("T: %.2f" , data.temperature / 100.0f);
+                printf("%f " , data.temperature / 100.0f);
                 
             }
             if (strcmp(argv[i], "-p") == 0) {
-                printf("P: %.2f hPa, H %.2f %%rH ", data.pressure / 100.0f);
+                printf("%f ", data.pressure / 100.0f*hectoPascal);
                 
             }
             if (strcmp(argv[i], "-m") == 0) {
-                printf("H %.2f %%rH ", data.humidity / 1000.0f);
+                printf("%f ", data.humidity / 1000.0f);
                 
             }
             if (strcmp(argv[i], "-g") == 0) {
                 /* Create a ramp heat waveform in 3 steps */
-                printf(", G: %d ohms", data.gas_resistance);
+                printf("%f ", data.gas_resistance);
                 
             } 
             if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "") == 0)  {
                 printf("Usage: sense [-t -p -h -g]\n");
-                printf("-t: Temperature oversampling\n");
-                printf("-p: Pressure oversampling\n");
-                printf("-m: (moister) Humidity oversampling\n");
-                printf("-g: Enable gas measurement\n");
+                printf("-t: Temperature degrees in Celsius\n");
+                printf("-p: Pressure in millimeters of mercury bar\n");
+                printf("-m: (Moister) Humidity in percent relative humidity\n");
+                printf("-g: Gas measurement in Ohms\n");
                 return 0;
             }
         }
