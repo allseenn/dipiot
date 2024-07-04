@@ -22,9 +22,9 @@ typedef struct {
 bool check_auth(const char *auth_header) {
     char expected_auth[256];
     snprintf(expected_auth, sizeof(expected_auth), "Authorization: Basic %s", PASSWORD);
-    printf("expected_auth: %s\n", expected_auth);
-    printf("auth_header: %s\n", auth_header);
-    printf("%d\n", strcmp(auth_header, expected_auth));
+    //printf("expected_auth: %s\n", expected_auth);
+    //printf("auth_header: %s\n", auth_header);
+    //printf("%d\n", strcmp(auth_header, expected_auth));
     if(strcmp(auth_header, expected_auth) == 208)
         return 0;
     return 1;
@@ -34,6 +34,9 @@ void *handle_client(void *arg) {
     client_info *client = (client_info *)arg;
     char buffer[BUF_SIZE];
     int client_socket = client->client_socket;
+    
+    FILE *fp;
+    char result[1024];
 
     while (1) {
         int result = recv(client_socket, buffer, BUF_SIZE, 0);
@@ -46,7 +49,7 @@ void *handle_client(void *arg) {
         }
 
         buffer[result] = '\0';
-        printf("%s\n", buffer);
+        //printf("%s\n", buffer);
         char *auth_header = strstr(buffer, "Authorization: Basic ");
         if (!auth_header || check_auth(auth_header)) {  
             char response[1024] = "HTTP/1.1 401 Unauthorized\r\n"
@@ -55,6 +58,18 @@ void *handle_client(void *arg) {
             send(client_socket, response, strlen(response), 0);
             break;
         }
+
+        fp = popen("sense -t -p -m -g", "r");
+        if (fp == NULL) {
+            perror("popen");
+            exit(EXIT_FAILURE);
+        }
+        // Считывание вывода команды в переменную
+        while (fgets(result, sizeof(result), fp) != NULL) {
+            printf("%s", result); // Для примера выводим результат на экран
+        }
+        pclose(fp);
+
 
         if (strstr(buffer, "GET /on1") != NULL) {
             system("echo 'LED #1 is ON'");
@@ -91,7 +106,8 @@ void *handle_client(void *arg) {
                               "      <button>OFF</button>"
                               "    </a>"
                               "  </p>"
-                              "</html>";
+                              "%s"
+                              "</html>", result;
 
         send(client_socket, response, strlen(response), 0);
     }
