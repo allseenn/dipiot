@@ -22,9 +22,6 @@ typedef struct {
 bool check_auth(const char *auth_header) {
     char expected_auth[256];
     snprintf(expected_auth, sizeof(expected_auth), "Authorization: Basic %s", PASSWORD);
-    //printf("expected_auth: %s\n", expected_auth);
-    //printf("auth_header: %s\n", auth_header);
-    //printf("%d\n", strcmp(auth_header, expected_auth));
     if(strcmp(auth_header, expected_auth) == 208)
         return 0;
     return 1;
@@ -36,7 +33,7 @@ void *handle_client(void *arg) {
     int client_socket = client->client_socket;
     
     FILE *fp;
-    char result[1024];
+    char results[1024];
 
     while (1) {
         int result = recv(client_socket, buffer, BUF_SIZE, 0);
@@ -65,8 +62,8 @@ void *handle_client(void *arg) {
             exit(EXIT_FAILURE);
         }
         // Считывание вывода команды в переменную
-        while (fgets(result, sizeof(result), fp) != NULL) {
-            printf("%s", result); // Для примера выводим результат на экран
+        while (fgets(results, sizeof(results), fp) != NULL) {
+            printf("%s", results); // Для примера выводим результат на экран
         }
         pclose(fp);
 
@@ -107,7 +104,7 @@ void *handle_client(void *arg) {
                               "    </a>"
                               "  </p>"
                               "%s"
-                              "</html>", result;
+                              "</html>", results;
 
         send(client_socket, response, strlen(response), 0);
     }
