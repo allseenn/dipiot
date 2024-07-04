@@ -80,6 +80,7 @@ int main(int argc, char const *argv[])
     uint16_t meas_period;
     bme680_get_profile_dur(&meas_period, &gas_sensor);
     // sleep(TIMEOUT);
+    user_delay_ms(meas_period);
     rslt = bme680_get_sensor_data(&data, &gas_sensor);
     for (int i = 1; i < argc; i++) {
             if (strcmp(argv[i], "-g") == 0) {
