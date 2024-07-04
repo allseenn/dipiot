@@ -49,7 +49,7 @@ void *handle_client(void *arg) {
         printf("%s\n", buffer);
 
         char *auth_header = strstr(buffer, "Authorization: ");
-        if (!auth_header == NULL && !check_auth(auth_header)) {  
+        if (!auth_header && !check_auth(auth_header)) {  
             char response[1024] = "HTTP/1.1 401 Unauthorized\r\n"
                                   "WWW-Authenticate: Basic realm=\"User Visible Realm\"\r\n"
                                   "\r\n";
