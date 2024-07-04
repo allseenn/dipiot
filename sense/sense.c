@@ -79,7 +79,7 @@ int main(int argc, char const *argv[])
     rslt = bme680_set_sensor_mode(&gas_sensor);
     uint16_t meas_period;
     bme680_get_profile_dur(&meas_period, &gas_sensor);
-    sleep(TIMEOUT);
+    // sleep(TIMEOUT);
     rslt = bme680_get_sensor_data(&data, &gas_sensor);
     for (int i = 1; i < argc; i++) {
             if (strcmp(argv[i], "-g") == 0) {
@@ -100,10 +100,10 @@ int main(int argc, char const *argv[])
             }
             if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "") == 0)  {
                 printf("Usage: sense [-t -p -h -g]\n");
+                printf("-g: Gas measurement in Ohms\n");
                 printf("-t: Temperature degrees in Celsius\n");
                 printf("-p: Pressure in millimeters of mercury bar\n");
                 printf("-m: (Moister) Humidity in percent relative humidity\n");
-                printf("-g: Gas measurement in Ohms\n");
                 return 0;
             }
         }
