@@ -54,6 +54,7 @@ int main(int argc, char const *argv[])
     }
 
 
+    gas_sensor.tph_sett.os_temp = BME680_OS_8X;
     gas_sensor.dev_id = BME680_I2C_ADDR_SECONDARY;
     gas_sensor.intf = BME680_I2C_INTF;
     gas_sensor.read = user_i2c_read;
@@ -62,42 +63,41 @@ int main(int argc, char const *argv[])
     gas_sensor.amb_temp = 25;
     gas_sensor.tph_sett.filter = BME680_FILTER_SIZE_3;
     gas_sensor.power_mode = BME680_FORCED_MODE;
-
-    int8_t rslt = BME680_OK;
-    rslt = bme680_init(&gas_sensor);
-    uint8_t set_required_settings;
-    uint16_t meas_period;
-    bme680_get_profile_dur(&meas_period, &gas_sensor);
-    struct bme680_field_data data;
-    float hectoPascal = 0.750063755419211;
-    for (int i = 1; i < argc; i++) {
-            if (strcmp(argv[i], "-t") == 0) {
-                gas_sensor.tph_sett.os_temp = BME680_OS_8X;
-                set_required_settings = BME680_OST_SEL | BME680_OSP_SEL | BME680_OSH_SEL | BME680_FILTER_SEL | BME680_GAS_SENSOR_SEL;
-                rslt = bme680_set_sensor_settings(set_required_settings,&gas_sensor);
-                rslt = bme680_set_sensor_mode(&gas_sensor);
-            }
-            if (strcmp(argv[i], "-p") == 0) {
                 gas_sensor.tph_sett.os_pres = BME680_OS_4X;
-                set_required_settings = BME680_OST_SEL | BME680_OSP_SEL | BME680_OSH_SEL | BME680_FILTER_SEL | BME680_GAS_SENSOR_SEL;
-                rslt = bme680_set_sensor_settings(set_required_settings,&gas_sensor);
-                rslt = bme680_set_sensor_mode(&gas_sensor);
-            }
-            if (strcmp(argv[i], "-m") == 0) {
                 gas_sensor.tph_sett.os_hum = BME680_OS_2X;
-                set_required_settings = BME680_OST_SEL | BME680_OSP_SEL | BME680_OSH_SEL | BME680_FILTER_SEL | BME680_GAS_SENSOR_SEL;
-                rslt = bme680_set_sensor_settings(set_required_settings,&gas_sensor);
-                rslt = bme680_set_sensor_mode(&gas_sensor);
-                
-            }
-            if (strcmp(argv[i], "-g") == 0) {
                 /* Create a ramp heat waveform in 3 steps */
                 gas_sensor.gas_sett.run_gas = BME680_ENABLE_GAS_MEAS;
                 gas_sensor.gas_sett.heatr_temp = 320; /* degree Celsius */
                 gas_sensor.gas_sett.heatr_dur = 150; /* milliseconds */
-                rslt = bme680_set_sensor_settings(set_required_settings,&gas_sensor);
-                rslt = bme680_set_sensor_mode(&gas_sensor);
-                sleep(TIMEOUT);
+
+    int8_t rslt = BME680_OK;
+    rslt = bme680_init(&gas_sensor);
+    uint8_t set_required_settings;
+    set_required_settings = BME680_OST_SEL | BME680_OSP_SEL | BME680_OSH_SEL | BME680_FILTER_SEL | BME680_GAS_SENSOR_SEL;
+    rslt = bme680_set_sensor_settings(set_required_settings,&gas_sensor);
+    rslt = bme680_set_sensor_mode(&gas_sensor);
+    uint16_t meas_period;
+    bme680_get_profile_dur(&meas_period, &gas_sensor);
+    struct bme680_field_data data;
+    float hectoPascal = 0.750063755419211;
+    sleep(TIMEOUT);
+    rslt = bme680_get_sensor_data(&data, &gas_sensor);
+    for (int i = 1; i < argc; i++) {
+            if (strcmp(argv[i], "-t") == 0) {
+                printf("%f ", data.temperature / 100.0f);
+            }
+            if (strcmp(argv[i], "-p") == 0) {
+                printf("%f ", data.pressure / 100.0f*hectoPascal);
+
+            }
+            if (strcmp(argv[i], "-m") == 0) {
+                printf("%f ", data.humidity / 1000.0f);
+
+                
+            }
+            if (strcmp(argv[i], "-g") == 0) {
+                printf("%f ", data.gas_resistance);
+
             } 
             if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "") == 0)  {
                 printf("Usage: sense [-t -p -h -g]\n");
@@ -107,18 +107,6 @@ int main(int argc, char const *argv[])
                 printf("-g: Gas measurement in Ohms\n");
                 return 0;
             }
-        }
-        sleep(TIMEOUT);
-        rslt = bme680_get_sensor_data(&data, &gas_sensor);
-        for (int i = 1; i < argc; i++){
-            if (strcmp(argv[i], "-t") == 0)
-                printf("%f ", data.temperature / 100.0f);
-            if (strcmp(argv[i], "-p") == 0)
-                printf("%f ", data.pressure / 100.0f*hectoPascal);
-            if (strcmp(argv[i], "-m") == 0)
-                printf("%f ", data.humidity / 1000.0f);
-            if (strcmp(argv[i], "-g") == 0)
-                printf("%f ", data.gas_resistance);
         }
     printf("\n");
     return 0;
