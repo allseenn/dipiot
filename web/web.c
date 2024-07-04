@@ -59,8 +59,9 @@ void *handle_client(void *arg) {
         }
 
         fp = popen("sense -t -p -m -g", "r");
-        //while (fgets(results, sizeof(results), fp) != NULL) {
-        sscanf(fp, "%f %f %f %d", &temp, &press, &hum, &gas);
+        while (fgets(results, sizeof(results), fp) != NULL);
+        results[strlen(results) - 1] = '\0';
+        sscanf(results, "%f %f %f %d", &temp, &press, &hum, &gas);
         pclose(fp);
         char response[BUF_SIZE];
         snprintf(response, sizeof(response),
