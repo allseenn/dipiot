@@ -71,12 +71,15 @@ int main(int argc, char const *argv[])
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-t") == 0) {
             gas_sensor.tph_sett.os_temp = BME680_OS_8X;  
+            gas_sensor.gas_sett.run_gas = BME680_DISABLE_GAS_MEAS;
         }
         if (strcmp(argv[i], "-p") == 0) {
             gas_sensor.tph_sett.os_pres = BME680_OS_4X;
+            gas_sensor.gas_sett.run_gas = BME680_DISABLE_GAS_MEAS;
         }
         if (strcmp(argv[i], "-m") == 0) {
             gas_sensor.tph_sett.os_hum = BME680_OS_2X; 
+            gas_sensor.gas_sett.run_gas = BME680_DISABLE_GAS_MEAS;
         }
         if (strcmp(argv[i], "-g") == 0) {            
             gas_sensor.gas_sett.run_gas = BME680_ENABLE_GAS_MEAS;
