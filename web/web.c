@@ -24,7 +24,7 @@ bool check_auth(const char *auth_header) {
     snprintf(expected_auth, sizeof(expected_auth), "Authorization: Basic %s", PASSWORD);
     printf("expected_auth: %s\n", expected_auth);
     printf("auth_header: %s\n", auth_header);
-    printf("%d\n", strcmp(auth_header, expected_auth))
+    printf("%d\n", strcmp(auth_header, expected_auth));
     if(strcmp(auth_header, expected_auth) == 0)
         return true;
     return false;
