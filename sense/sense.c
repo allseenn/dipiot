@@ -92,13 +92,13 @@ int main(int argc, char const *argv[])
             return 0;
         }
         }
+        rslt = bme680_set_sensor_settings(set_required_settings,&gas_sensor);
+        rslt = bme680_set_sensor_mode(&gas_sensor);
+        uint16_t meas_period;
+        bme680_get_profile_dur(&meas_period, &gas_sensor);
+        user_delay_ms(meas_period);
+        rslt = bme680_get_sensor_data(&data, &gas_sensor);
     for (int i = 1; i < argc; i++) {
-    rslt = bme680_set_sensor_settings(set_required_settings,&gas_sensor);
-    rslt = bme680_set_sensor_mode(&gas_sensor);
-    uint16_t meas_period;
-    bme680_get_profile_dur(&meas_period, &gas_sensor);
-    user_delay_ms(meas_period);
-    rslt = bme680_get_sensor_data(&data, &gas_sensor);
         if(strcmp(argv[i], "-g") == 0) printf("%d ", data.gas_resistance);
         if(strcmp(argv[i], "-t") == 0) printf("%f ", data.temperature / 100.0f);
         if(strcmp(argv[i], "-p") == 0) printf("%f ", data.pressure / 100.0f*hectoPascal);
