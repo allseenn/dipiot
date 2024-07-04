@@ -6,9 +6,6 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <signal.h>
-#include <openssl/bio.h>
-#include <openssl/evp.h>
-#include <openssl/buffer.h>
 
 #define PORT 8000
 #define BUF_SIZE 1024
@@ -18,42 +15,12 @@ typedef struct {
     struct sockaddr_in client_addr;
 } client_info;
 
-char *base64_encode(const char *input) {
-    BIO *bio, *b64;
-    BUF_MEM *buffer_ptr;
-
-    b64 = BIO_new(BIO_f_base64());
-    bio = BIO_new(BIO_s_mem());
-    bio = BIO_push(b64, bio);
-
-    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
-    BIO_write(bio, input, strlen(input));
-    BIO_flush(bio);
-    BIO_get_mem_ptr(bio, &buffer_ptr);
-
-    char *encoded_data = (char *)malloc((buffer_ptr->length + 1) * sizeof(char));
-    if (encoded_data == NULL) {
-        perror("malloc");
-        exit(EXIT_FAILURE);
-    }
-
-    memcpy(encoded_data, buffer_ptr->data, buffer_ptr->length);
-    encoded_data[buffer_ptr->length] = '\0';
-
-    BIO_free_all(bio);
-    return encoded_data;
-}
-
 bool check_auth(const char *auth_header) {
     const char *user_pass = "admin:students";
-    char *expected_auth = base64_encode(user_pass);
-
     char auth_str[256];
-    snprintf(auth_str, sizeof(auth_str), "Basic %s", expected_auth);
+    snprintf(auth_str, sizeof(auth_str), "Basic %s", user_pass);
 
-    bool result = strcmp(auth_header, auth_str) == 0;
-    free(expected_auth);
-    return result;
+    return strcmp(auth_header, auth_str) == 0;
 }
 
 void *handle_client(void *arg) {
@@ -129,21 +96,22 @@ void *handle_client(void *arg) {
 }
 
 volatile sig_atomic_t server_running = 1;
+int server_socket;
 
 void handle_signal(int sig) {
     if (sig == SIGINT) {
         printf("\nReceived SIGINT. Shutting down server...\n");
         server_running = 0;
+        close(server_socket);
     }
 }
 
 int main() {
-    int server;
     struct sockaddr_in server_addr;
     socklen_t size;
 
-    server = socket(AF_INET, SOCK_STREAM, 0);
-    if (server < 0) {
+    server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_socket < 0) {
         perror("Error establishing socket");
         exit(EXIT_FAILURE);
     }
@@ -154,7 +122,7 @@ int main() {
     server_addr.sin_addr.s_addr = htons(INADDR_ANY);
     server_addr.sin_port = htons(PORT);
 
-    if (bind(server, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
         perror("Error binding connection");
         exit(EXIT_FAILURE);
     }
@@ -162,16 +130,21 @@ int main() {
     size = sizeof(server_addr);
     printf("=> Looking for clients...\n");
 
-    listen(server, 5);
+    listen(server_socket, 5);
 
     signal(SIGINT, handle_signal);
 
     pthread_t tid;
     while (server_running) {
         client_info *client = malloc(sizeof(client_info));
-        client->client_socket = accept(server, (struct sockaddr*)&client->client_addr, &size);
+        client->client_socket = accept(server_socket, (struct sockaddr*)&client->client_addr, &size);
 
         if (client->client_socket < 0) {
+            if (!server_running) {
+                // Server is shutting down
+                free(client);
+                break;
+            }
             perror("Error on accepting");
             free(client);
             continue;
@@ -189,7 +162,7 @@ int main() {
     }
 
     printf("Closing server socket...\n");
-    close(server);
+    close(server_socket);
     printf("Goodbye...\n");
 
     return 0;

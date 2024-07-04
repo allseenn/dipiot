@@ -1,5 +1,5 @@
 TARGET=web
-ARGS=-lssl -lcrypto -pthread
+ARGS=-pthread
 
 all: $(TARGET)
 
