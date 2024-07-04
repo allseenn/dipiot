@@ -61,6 +61,7 @@ int main(int argc, char const *argv[])
     gas_sensor.amb_temp = 25;
     gas_sensor.power_mode = BME680_FORCED_MODE;
     gas_sensor.tph_sett.filter = BME680_FILTER_SIZE_3;
+            gas_sensor.gas_sett.run_gas = BME680_ENABLE_GAS_MEAS;
 
     float hectoPascal = 0.750063755419211;
     struct bme680_field_data data;
@@ -77,7 +78,6 @@ int main(int argc, char const *argv[])
             gas_sensor.tph_sett.os_hum = BME680_OS_2X; 
         }
         if (strcmp(argv[i], "-g") == 0) {            
-            gas_sensor.gas_sett.run_gas = BME680_ENABLE_GAS_MEAS;
             gas_sensor.gas_sett.heatr_temp = 320; /* degree Celsius */
             gas_sensor.gas_sett.heatr_dur = 150; /* milliseconds */
         } 
