@@ -21,7 +21,7 @@ typedef struct {
 
 bool check_auth(const char *auth_header) {
     char expected_auth[256];
-    snprintf(expected_auth, sizeof(expected_auth), "%s", PASSWORD);
+    snprintf(expected_auth, sizeof(expected_auth), "Authorization: Basic %s", PASSWORD);
     printf("expected_auth: %s\n", expected_auth);
     printf("auth_header: %s\n", auth_header);
     printf("%d\n", strcmp(auth_header, expected_auth));
