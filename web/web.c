@@ -68,19 +68,19 @@ void *handle_client(void *arg) {
 
 
         if (strstr(buffer, "GET /on1") != NULL) {
-            fp = popen("sense -t -p -m -g", "r");
+            fp = popen("sense -t", "r");
             while (fgets(temp, sizeof(temp), fp) != NULL);
             pclose(fp);
         } else if (strstr(buffer, "GET /off1") != NULL) {
-            fp = popen("sense -t -p -m -g", "r");
+            fp = popen("sense -p", "r");
             while (fgets(press, sizeof(press), fp) != NULL);
             pclose(fp);
         } else if (strstr(buffer, "GET /on2") != NULL) {
-            fp = popen("sense -t -p -m -g", "r");
+            fp = popen("sense -m", "r");
             while (fgets(hum, sizeof(hum), fp) != NULL);
             pclose(fp);
         } else if (strstr(buffer, "GET /off2") != NULL) {
-            fp = popen("sense -t -p -m -g", "r");
+            fp = popen("sense -g", "r");
             while (fgets(gas, sizeof(gas), fp) != NULL);
             pclose(fp);
         }
@@ -103,7 +103,7 @@ void *handle_client(void *arg) {
 "  <tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
 "  <tr><td>Цельсия</td><td>mm/РтСт</td><td>проценты</td><td>Ом</td></tr></table>"
 "  <p>%s</p>"
-"</html>", results);
+"</html>", temp, press, hum, gas, results);
         send(client_socket, response, strlen(response), 0);
     }
 
