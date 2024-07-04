@@ -12,7 +12,7 @@
 #define IIC_Dev  "/dev/i2c-1"
 #define channel 1
 #define USESPISINGLEREADWRITE 0 
-#define TIMEOUT 5
+#define TIMEOUT 2
 
 int fd;
 
@@ -76,29 +76,18 @@ int main(int argc, char const *argv[])
                 set_required_settings = BME680_OST_SEL | BME680_OSP_SEL | BME680_OSH_SEL | BME680_FILTER_SEL | BME680_GAS_SENSOR_SEL;
                 rslt = bme680_set_sensor_settings(set_required_settings,&gas_sensor);
                 rslt = bme680_set_sensor_mode(&gas_sensor);
-                sleep(TIMEOUT);
-                rslt = bme680_get_sensor_data(&data, &gas_sensor);
-                printf("%f " , data.temperature / 100.0f);
-                
             }
             if (strcmp(argv[i], "-p") == 0) {
                 gas_sensor.tph_sett.os_pres = BME680_OS_4X;
                 set_required_settings = BME680_OST_SEL | BME680_OSP_SEL | BME680_OSH_SEL | BME680_FILTER_SEL | BME680_GAS_SENSOR_SEL;
                 rslt = bme680_set_sensor_settings(set_required_settings,&gas_sensor);
                 rslt = bme680_set_sensor_mode(&gas_sensor);
-                sleep(TIMEOUT);
-                rslt = bme680_get_sensor_data(&data, &gas_sensor);
-                printf("%f ", data.pressure / 100.0f*hectoPascal);
-                
             }
             if (strcmp(argv[i], "-m") == 0) {
                 gas_sensor.tph_sett.os_hum = BME680_OS_2X;
                 set_required_settings = BME680_OST_SEL | BME680_OSP_SEL | BME680_OSH_SEL | BME680_FILTER_SEL | BME680_GAS_SENSOR_SEL;
                 rslt = bme680_set_sensor_settings(set_required_settings,&gas_sensor);
-                rslt = bme680_set_sensor_mode(&gas_sensor);
-                sleep(TIMEOUT);
-                rslt = bme680_get_sensor_data(&data, &gas_sensor);
-                printf("%f ", data.humidity / 1000.0f);
+                rslt = bme680_set_sensor_mode(&gas_sensor)
                 
             }
             if (strcmp(argv[i], "-g") == 0) {
@@ -108,9 +97,6 @@ int main(int argc, char const *argv[])
                 gas_sensor.gas_sett.heatr_dur = 150; /* milliseconds */
                 rslt = bme680_set_sensor_settings(set_required_settings,&gas_sensor);
                 rslt = bme680_set_sensor_mode(&gas_sensor);
-                sleep(TIMEOUT);
-                rslt = bme680_get_sensor_data(&data, &gas_sensor);
-                printf("%f ", data.gas_resistance);
                 
             } 
             if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "") == 0)  {
@@ -121,6 +107,18 @@ int main(int argc, char const *argv[])
                 printf("-g: Gas measurement in Ohms\n");
                 return 0;
             }
+        }
+        sleep(TIMEOUT);
+        rslt = bme680_get_sensor_data(&data, &gas_sensor);
+        for (int i = 1; i < argc; i++){
+            if (strcmp(argv[i], "-t") == 0)
+                printf("%f ", data.temperature / 100.0f);
+            if (strcmp(argv[i], "-p") == 0)
+                printf("%f ", data.pressure / 100.0f*hectoPascal);
+            if (strcmp(argv[i], "-m") == 0)
+                printf("%f ", data.humidity / 1000.0f);
+            if (strcmp(argv[i], "-g") == 0)
+                printf("%f ", data.gas_resistance);
         }
     printf("\n");
     return 0;
