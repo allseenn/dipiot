@@ -33,7 +33,7 @@ void *handle_client(void *arg) {
     int client_socket = client->client_socket;
     
     FILE *fp;
-    char *results;
+    char results[1024];
     float temp, press, hum;
     int gas;
 
