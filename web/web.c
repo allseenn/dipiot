@@ -24,7 +24,9 @@ bool check_auth(const char *auth_header) {
     snprintf(expected_auth, sizeof(expected_auth), "%s", PASSWORD);
     printf("expected_auth: %s\n", expected_auth);
     printf("auth_header: %s\n", auth_header);
-    return strcmp(auth_header, expected_auth) == 0;
+    if(strcmp(auth_header, expected_auth) == 0)
+        return true;
+    return false;
 }
 
 void *handle_client(void *arg) {
