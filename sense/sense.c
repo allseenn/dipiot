@@ -61,14 +61,14 @@ int main(int argc, char const *argv[])
     gas_sensor.write = user_i2c_write;
     gas_sensor.delay_ms = user_delay_ms;
     gas_sensor.amb_temp = 25;
-    gas_sensor.tph_sett.filter = BME680_FILTER_SIZE_3;
     gas_sensor.power_mode = BME680_FORCED_MODE;
-                gas_sensor.tph_sett.os_pres = BME680_OS_4X;
-                gas_sensor.tph_sett.os_hum = BME680_OS_2X;
-                /* Create a ramp heat waveform in 3 steps */
-                gas_sensor.gas_sett.run_gas = BME680_ENABLE_GAS_MEAS;
-                gas_sensor.gas_sett.heatr_temp = 320; /* degree Celsius */
-                gas_sensor.gas_sett.heatr_dur = 150; /* milliseconds */
+    gas_sensor.tph_sett.os_hum = BME680_OS_2X;
+    gas_sensor.tph_sett.filter = BME680_FILTER_SIZE_3;
+    gas_sensor.tph_sett.os_pres = BME680_OS_4X;
+    /* Create a ramp heat waveform in 3 steps */
+    gas_sensor.gas_sett.run_gas = BME680_ENABLE_GAS_MEAS;
+    gas_sensor.gas_sett.heatr_temp = 320; /* degree Celsius */
+    gas_sensor.gas_sett.heatr_dur = 150; /* milliseconds */
 
     int8_t rslt = BME680_OK;
     rslt = bme680_init(&gas_sensor);
