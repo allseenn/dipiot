@@ -7,7 +7,7 @@
 #include <pthread.h>
 #include <signal.h>
 
-#define PORT 8080
+#define PORT 8000
 #define BUF_SIZE 1024
 
 const char *USERNAME = "admin";
