@@ -60,16 +60,16 @@ void *handle_client(void *arg) {
         }
 
         fp = popen("sense -t", "r");
-        while (fgets(temp, 10, fp) != NULL);
+        while (fgets(temp, sizeof(temp), fp) != NULL);
         pclose(fp);
         fp = popen("sense -p", "r");
-        while (fgets(press, 10, fp) != NULL);
+        while (fgets(press, sizeof(press), fp) != NULL);
         pclose(fp);
         fp = popen("sense -m", "r");
-        while (fgets(hum, 10, fp) != NULL);
+        while (fgets(hum, sizeof(hum), fp) != NULL);
         pclose(fp);
         fp = popen("sense -g", "r");
-        while (fgets(gas, 10, fp) != NULL);
+        while (fgets(gas, sizeof(gas), fp) != NULL);
         pclose(fp);
         char response[BUF_SIZE];
         snprintf(response, sizeof(response),
