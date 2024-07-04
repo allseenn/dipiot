@@ -33,11 +33,11 @@ void *handle_client(void *arg) {
     int client_socket = client->client_socket;
     
     FILE *fp;
-    char results[1024];
-    float temp[1];
-    float press[1];
-    float hum[1];
-    int gas[1];
+    char results[100];
+    char temp[10];
+    char press[10];
+    char hum[10];
+    char gas[10];
 
     while (1) {
         int result = recv(client_socket, buffer, BUF_SIZE, 0);
@@ -69,19 +69,19 @@ void *handle_client(void *arg) {
 
         if (strstr(buffer, "GET /on1") != NULL) {
             fp = popen("sense -t -p -m -g", "r");
-            while (fgets(temp, sizeof(float), fp) != NULL);
+            while (fgets(temp, sizeof(temp), fp) != NULL);
             pclose(fp);
         } else if (strstr(buffer, "GET /off1") != NULL) {
             fp = popen("sense -t -p -m -g", "r");
-            while (fgets(press, sizeof(float), fp) != NULL);
+            while (fgets(press, sizeof(press), fp) != NULL);
             pclose(fp);
         } else if (strstr(buffer, "GET /on2") != NULL) {
             fp = popen("sense -t -p -m -g", "r");
-            while (fgets(hum, sizeof(float), fp) != NULL);
+            while (fgets(hum, sizeof(hum), fp) != NULL);
             pclose(fp);
         } else if (strstr(buffer, "GET /off2") != NULL) {
             fp = popen("sense -t -p -m -g", "r");
-            while (fgets(gas, sizeof(int), fp) != NULL);
+            while (fgets(gas, sizeof(gas), fp) != NULL);
             pclose(fp);
         }
 
