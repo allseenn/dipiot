@@ -12,7 +12,7 @@
 #define IIC_Dev  "/dev/i2c-1"
 #define channel 1
 #define USESPISINGLEREADWRITE 0 
-#define TIMEOUT 0.1
+#define TIMEOUT 1
 
 int fd;
 
