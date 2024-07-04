@@ -33,11 +33,9 @@ void *handle_client(void *arg) {
     int client_socket = client->client_socket;
     
     FILE *fp;
-    char results[100];
-    char temp[10];
-    char press[10];
-    char hum[10];
-    char gas[10];
+    char *results;
+    float temp, press, hum;
+    int gas;
 
     while (1) {
         int result = recv(client_socket, buffer, BUF_SIZE, 0);
@@ -65,26 +63,7 @@ void *handle_client(void *arg) {
             printf("%s", results); // Для примера выводим результат на экран
         }
         pclose(fp);
-
-
-        if (strstr(buffer, "GET /on1") != NULL) {
-            fp = popen("sense -t", "r");
-            while (fgets(temp, sizeof(temp), fp) != NULL);
-            pclose(fp);
-        } else if (strstr(buffer, "GET /off1") != NULL) {
-            fp = popen("sense -p", "r");
-            while (fgets(press, sizeof(press), fp) != NULL);
-            pclose(fp);
-        } else if (strstr(buffer, "GET /on2") != NULL) {
-            fp = popen("sense -m", "r");
-            while (fgets(hum, sizeof(hum), fp) != NULL);
-            pclose(fp);
-        } else if (strstr(buffer, "GET /off2") != NULL) {
-            fp = popen("sense -g", "r");
-            while (fgets(gas, sizeof(gas), fp) != NULL);
-            pclose(fp);
-        }
-
+        sscanf(results, "%f %f %f %d", &temp, &press, &hum, &gas);
         char response[BUF_SIZE];
         snprintf(response, sizeof(response),
 "HTTP/1.1 200 OK\r\n"
@@ -96,14 +75,13 @@ void *handle_client(void *arg) {
 "  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
 "  </head>"
 "  <h1>ODROID: WEB-MET</h1>"
-"  <table><tr><td><a href=\"on1\"><button>temperature</button></a></td>"
-"  <td><a href=\"off1\"><button>pressure</button></a></td>"
-"  <td><a href=\"on2\"> <button>humidity</button></a></td>"
-"  <td><a href=\"off2\"><button>index of air quality</button></a></td></tr>"
+"  <table><tr><th>Температура</th>"
+"  <th>Давление</th>"
+"  <th>Влажность</td>"
+"  <th><Воздух</td></tr>"
 "  <tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
 "  <tr><td>Цельсия</td><td>mm/РтСт</td><td>проценты</td><td>Ом</td></tr></table>"
-"  <p>%s</p>"
-"</html>", temp, press, hum, gas, results);
+"</html>", temp, press, hum, gas);
         send(client_socket, response, strlen(response), 0);
     }
 
