@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <signal.h>
+#include <openssl/sha.h>
 
 #define PORT 8000
 #define BUF_SIZE 1024
@@ -14,6 +15,44 @@ typedef struct {
     int client_socket;
     struct sockaddr_in client_addr;
 } client_info;
+
+// Base64 encoding table
+static const char base64_table[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+void base64_encode(const unsigned char *input, int length, char *output) {
+    int i, j;
+    for (i = 0, j = 0; i < length;) {
+        uint32_t octet_a = i < length ? input[i++] : 0;
+        uint32_t octet_b = i < length ? input[i++] : 0;
+        uint32_t octet_c = i < length ? input[i++] : 0;
+
+        uint32_t triple = (octet_a << 0x10) + (octet_b << 0x08) + octet_c;
+
+        output[j++] = base64_table[(triple >> 3 * 6) & 0x3F];
+        output[j++] = base64_table[(triple >> 2 * 6) & 0x3F];
+        output[j++] = base64_table[(triple >> 1 * 6) & 0x3F];
+        output[j++] = base64_table[(triple >> 0 * 6) & 0x3F];
+    }
+
+    for (int k = 0; k < mod_table[length % 3]; k++)
+        output[*output_len - 1 - k] = '=';
+
+    output[j] = '\0';
+}
+
+bool check_auth(const char *auth_header) {
+    const char *user_pass = "admin:students";
+    char expected_auth[128];
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256((unsigned char*)user_pass, strlen(user_pass), hash);
+    base64_encode(hash, SHA256_DIGEST_LENGTH, expected_auth);
+
+    char auth_str[256];
+    snprintf(auth_str, sizeof(auth_str), "Basic %s", expected_auth);
+
+    return strcmp(auth_header, auth_str) == 0;
+}
 
 void *handle_client(void *arg) {
     client_info *client = (client_info *)arg;
@@ -32,6 +71,15 @@ void *handle_client(void *arg) {
 
         buffer[result] = '\0';
         printf("%s\n", buffer);
+
+        char *auth_header = strstr(buffer, "Authorization: ");
+        if (!auth_header || !check_auth(auth_header + 15)) {
+            char response[1024] = "HTTP/1.1 401 Unauthorized\r\n"
+                                  "WWW-Authenticate: Basic realm=\"User Visible Realm\"\r\n"
+                                  "\r\n";
+            send(client_socket, response, strlen(response), 0);
+            break;
+        }
 
         if (strstr(buffer, "GET /on1") != NULL) {
             system("echo 'LED #1 is ON'");
