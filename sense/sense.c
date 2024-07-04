@@ -52,16 +52,6 @@ int main(int argc, char const *argv[])
         exit(1);
     }
 
-    int8_t rslt = BME680_OK;
-    rslt = bme680_init(&gas_sensor);
-    uint8_t set_required_settings;
-    set_required_settings = BME680_OST_SEL | BME680_OSP_SEL | BME680_OSH_SEL | BME680_FILTER_SEL | BME680_GAS_SENSOR_SEL;
-    rslt = bme680_set_sensor_settings(set_required_settings,&gas_sensor);
-    rslt = bme680_set_sensor_mode(&gas_sensor);
-    uint16_t meas_period;
-    bme680_get_profile_dur(&meas_period, &gas_sensor);
-    struct bme680_field_data data;
-    rslt = bme680_get_sensor_data(&data, &gas_sensor);
 
     gas_sensor.dev_id = BME680_I2C_ADDR_SECONDARY;
     gas_sensor.intf = BME680_I2C_INTF;
@@ -78,6 +68,16 @@ int main(int argc, char const *argv[])
     gas_sensor.gas_sett.heatr_temp = 320; /* degree Celsius */
     gas_sensor.gas_sett.heatr_dur = 150; /* milliseconds */
 
+    int8_t rslt = BME680_OK;
+    rslt = bme680_init(&gas_sensor);
+    uint8_t set_required_settings;
+    set_required_settings = BME680_OST_SEL | BME680_OSP_SEL | BME680_OSH_SEL | BME680_FILTER_SEL | BME680_GAS_SENSOR_SEL;
+    rslt = bme680_set_sensor_settings(set_required_settings,&gas_sensor);
+    rslt = bme680_set_sensor_mode(&gas_sensor);
+    uint16_t meas_period;
+    bme680_get_profile_dur(&meas_period, &gas_sensor);
+    struct bme680_field_data data;
+    rslt = bme680_get_sensor_data(&data, &gas_sensor);
 
     for (int i = 1; i < argc; i++) {
             if (strcmp(argv[i], "-t") == 0) {
