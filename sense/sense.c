@@ -60,6 +60,12 @@ int main(int argc, char const *argv[])
     gas_sensor.amb_temp = 25;
     gas_sensor.tph_sett.filter = BME680_FILTER_SIZE_3;
     gas_sensor.power_mode = BME680_FORCED_MODE;
+    gas_sensor.tph_sett.os_temp = BME680_OS_8X;
+    gas_sensor.tph_sett.os_pres = BME680_OS_4X;
+    gas_sensor.tph_sett.os_hum = BME680_OS_2X;
+    gas_sensor.gas_sett.run_gas = BME680_ENABLE_GAS_MEAS;
+    gas_sensor.gas_sett.heatr_temp = 320; /* degree Celsius */
+    gas_sensor.gas_sett.heatr_dur = 150; /* milliseconds */
 
 
     int8_t rslt = BME680_OK;
@@ -68,8 +74,6 @@ int main(int argc, char const *argv[])
     set_required_settings = BME680_OST_SEL | BME680_OSP_SEL | BME680_OSH_SEL | BME680_FILTER_SEL | BME680_GAS_SENSOR_SEL;
     rslt = bme680_set_sensor_settings(set_required_settings,&gas_sensor);
     rslt = bme680_set_sensor_mode(&gas_sensor);
-    /* Select the power mode */
-    /* Must be set before writing the sensor configuration */
     uint16_t meas_period;
     bme680_get_profile_dur(&meas_period, &gas_sensor);
     struct bme680_field_data data;
@@ -77,25 +81,19 @@ int main(int argc, char const *argv[])
 
     for (int i = 1; i < argc; i++) {
             if (strcmp(argv[i], "-t") == 0) {
-                gas_sensor.tph_sett.os_temp = BME680_OS_8X;
                 printf("T: %.2f" , data.temperature / 100.0f);
                 
             }
             if (strcmp(argv[i], "-p") == 0) {
-                gas_sensor.tph_sett.os_pres = BME680_OS_4X;
                 printf("P: %.2f hPa, H %.2f %%rH ", data.pressure / 100.0f);
                 
             }
             if (strcmp(argv[i], "-h") == 0) {
-                gas_sensor.tph_sett.os_hum = BME680_OS_2X;
                 printf("H %.2f %%rH ", data.humidity / 1000.0f);
                 
             }
             if (strcmp(argv[i], "-g") == 0) {
-                gas_sensor.gas_sett.run_gas = BME680_ENABLE_GAS_MEAS;
                 /* Create a ramp heat waveform in 3 steps */
-                gas_sensor.gas_sett.heatr_temp = 320; /* degree Celsius */
-                gas_sensor.gas_sett.heatr_dur = 150; /* milliseconds */
                 printf(", G: %d ohms", data.gas_resistance);
                 
             } 
