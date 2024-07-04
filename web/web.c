@@ -21,11 +21,11 @@ typedef struct {
 
 bool check_auth(const char *auth_header) {
     char expected_auth[256];
-    snprintf(expected_auth, sizeof(expected_auth), "%s", PASSWORD);
+    snprintf(expected_auth, sizeof(expected_auth), "Authorization: Basic %s", PASSWORD);
     printf("expected_auth: %s\n", expected_auth);
     printf("auth_header: %s\n", auth_header);
     printf("%d\n", strcmp(auth_header, expected_auth));
-    if(strcmp(auth_header, expected_auth) == 208)
+    if(strcmp(auth_header, expected_auth) == 0)
         return 0;
     return 1;
 }
@@ -47,7 +47,7 @@ void *handle_client(void *arg) {
 
         buffer[result] = '\0';
         printf("%s\n", buffer);
-        char *auth_header = strstr(buffer, "Authorization: ");
+        char *auth_header = strstr(buffer, "Authorization: Basic ");
         if (!auth_header || check_auth(auth_header)) {  
             char response[1024] = "HTTP/1.1 401 Unauthorized\r\n"
                                   "WWW-Authenticate: Basic realm=\"User Visible Realm\"\r\n"
