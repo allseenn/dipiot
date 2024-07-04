@@ -48,7 +48,6 @@ void *handle_client(void *arg) {
         }
 
         buffer[result] = '\0';
-        //printf("%s\n", buffer);
         char *auth_header = strstr(buffer, "Authorization: Basic ");
         if (!auth_header || check_auth(auth_header)) {  
             char response[1024] = "HTTP/1.1 401 Unauthorized\r\n"
@@ -61,7 +60,7 @@ void *handle_client(void *arg) {
         fp = popen("sense -t -p -m -g", "r");
         while (fgets(results, sizeof(results), fp) != NULL);
         pclose(fp);
-        results[strlen(results) - 1] = '\0';
+        results[strlen(results) - 3] = '\0';
         sscanf(results, "%f %f %f %d", &temp, &press, &hum, &gas);
         char response[BUF_SIZE];
         snprintf(response, sizeof(response),
