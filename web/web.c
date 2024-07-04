@@ -17,9 +17,14 @@ typedef struct {
 
 const char *base64_encode(const char *input) {
     static const char encoding_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    static char encoded_data[64];
     int input_length = strlen(input);
     int output_length = 4 * ((input_length + 2) / 3);
+    char *encoded_data = malloc(output_length + 1);
+    if (encoded_data == NULL) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
     int mod_table[] = {0, 2, 1};
 
     for (int i = 0, j = 0; i < input_length;) {
@@ -49,7 +54,9 @@ bool check_auth(const char *auth_header) {
     char auth_str[256];
     snprintf(auth_str, sizeof(auth_str), "Basic %s", expected_auth);
 
-    return strcmp(auth_header, auth_str) == 0;
+    bool result = strcmp(auth_header, auth_str) == 0;
+    free((void*)expected_auth);
+    return result;
 }
 
 void *handle_client(void *arg) {
