@@ -25,7 +25,7 @@ bool check_auth(const char *auth_header) {
     printf("expected_auth: %s\n", expected_auth);
     printf("auth_header: %s\n", auth_header);
     printf("%d\n", strcmp(auth_header, expected_auth));
-    if(strcmp(auth_header, expected_auth) == 0)
+    if(strcmp(auth_header, expected_auth) == 208)
         return 0;
     return 1;
 }
