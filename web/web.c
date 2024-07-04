@@ -10,17 +10,20 @@
 #define PORT 8000
 #define BUF_SIZE 1024
 
+const char *USERNAME = "admin";
+const char *PASSWORD = "students";
+
 typedef struct {
     int client_socket;
     struct sockaddr_in client_addr;
 } client_info;
 
-bool check_auth(const char *auth_header) {
-    const char *user_pass = "admin:YWRtaW46c3R1ZGVudHM=";
-    char auth_str[256];
-    snprintf(auth_str, sizeof(auth_str), "Basic %s", user_pass);
 
-    return strcmp(auth_header, auth_str) == 0;
+bool check_auth(const char *auth_header) {
+    char expected_auth[256];
+    snprintf(expected_auth, sizeof(expected_auth), "Basic %s:%s", USERNAME, PASSWORD);
+
+    return strcmp(auth_header, expected_auth) == 0;
 }
 
 void *handle_client(void *arg) {
@@ -42,7 +45,7 @@ void *handle_client(void *arg) {
         printf("%s\n", buffer);
 
         char *auth_header = strstr(buffer, "Authorization: ");
-        if (!auth_header || !check_auth(auth_header + 15)) {
+        if (!auth_header || !check_auth(auth_header + 21)) {  // 21 to skip "Authorization: Basic "
             char response[1024] = "HTTP/1.1 401 Unauthorized\r\n"
                                   "WWW-Authenticate: Basic realm=\"User Visible Realm\"\r\n"
                                   "\r\n";
