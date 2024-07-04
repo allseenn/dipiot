@@ -52,6 +52,8 @@ int main(int argc, char const *argv[])
         printf("Failed to acquire bus access and/or talk to slave.\n");
         exit(1);
     }
+    uint8_t set_required_settings;
+    set_required_settings = BME680_OST_SEL | BME680_OSP_SEL | BME680_OSH_SEL | BME680_FILTER_SEL | BME680_GAS_SENSOR_SEL;
 
     gas_sensor.dev_id = BME680_I2C_ADDR_SECONDARY;
     gas_sensor.intf = BME680_I2C_INTF;
@@ -61,7 +63,6 @@ int main(int argc, char const *argv[])
     gas_sensor.amb_temp = 25;
     gas_sensor.power_mode = BME680_FORCED_MODE;
     gas_sensor.tph_sett.filter = BME680_FILTER_SIZE_3;
-            gas_sensor.gas_sett.run_gas = BME680_ENABLE_GAS_MEAS;
 
     float hectoPascal = 0.750063755419211;
     struct bme680_field_data data;
@@ -78,6 +79,7 @@ int main(int argc, char const *argv[])
             gas_sensor.tph_sett.os_hum = BME680_OS_2X; 
         }
         if (strcmp(argv[i], "-g") == 0) {            
+            gas_sensor.gas_sett.run_gas = BME680_ENABLE_GAS_MEAS;
             gas_sensor.gas_sett.heatr_temp = 320; /* degree Celsius */
             gas_sensor.gas_sett.heatr_dur = 150; /* milliseconds */
         } 
@@ -91,8 +93,6 @@ int main(int argc, char const *argv[])
         }
         }
     for (int i = 1; i < argc; i++) {
-    uint8_t set_required_settings;
-    set_required_settings = BME680_OST_SEL | BME680_OSP_SEL | BME680_OSH_SEL | BME680_FILTER_SEL | BME680_GAS_SENSOR_SEL;
     rslt = bme680_set_sensor_settings(set_required_settings,&gas_sensor);
     rslt = bme680_set_sensor_mode(&gas_sensor);
     uint16_t meas_period;
