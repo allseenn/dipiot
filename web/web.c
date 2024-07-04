@@ -33,9 +33,11 @@ void *handle_client(void *arg) {
     int client_socket = client->client_socket;
     
     FILE *fp;
-    char results[1024];
-    float temp, press, hum;
-    int gas;
+    //char results[10];
+    char temp[10];
+    char press[10];
+    char hum[10];
+    char gas[10];
 
     while (1) {
         int result = recv(client_socket, buffer, BUF_SIZE, 0);
@@ -57,11 +59,18 @@ void *handle_client(void *arg) {
             break;
         }
 
-        fp = popen("sense -t -p -m -g", "r");
-        while (fgets(results, sizeof(results), fp) != NULL);
+        fp = popen("sense -t", "r");
+        while (fgets(temp, 10, fp) != NULL);
         pclose(fp);
-        results[strlen(results) - 3] = '\0';
-        sscanf(results, "%f %f %f %d", &temp, &press, &hum, &gas);
+        fp = popen("sense -p", "r");
+        while (fgets(press, 10, fp) != NULL);
+        pclose(fp);
+        fp = popen("sense -m", "r");
+        while (fgets(hum, 10, fp) != NULL);
+        pclose(fp);
+        fp = popen("sense -g", "r");
+        while (fgets(gas, 10, fp) != NULL);
+        pclose(fp);
         char response[BUF_SIZE];
         snprintf(response, sizeof(response),
 "HTTP/1.1 200 OK\r\n"
