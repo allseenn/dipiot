@@ -6,7 +6,6 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <signal.h>
-#include <openssl/sha.h>
 
 #define PORT 8000
 #define BUF_SIZE 1024
@@ -16,37 +15,36 @@ typedef struct {
     struct sockaddr_in client_addr;
 } client_info;
 
-// Base64 encoding table
-static const char base64_table[] =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const char *base64_encode(const char *input) {
+    static const char encoding_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    static char encoded_data[64];
+    int input_length = strlen(input);
+    int output_length = 4 * ((input_length + 2) / 3);
+    int mod_table[] = {0, 2, 1};
 
-void base64_encode(const unsigned char *input, int length, char *output) {
-    int i, j;
-    for (i = 0, j = 0; i < length;) {
-        uint32_t octet_a = i < length ? input[i++] : 0;
-        uint32_t octet_b = i < length ? input[i++] : 0;
-        uint32_t octet_c = i < length ? input[i++] : 0;
+    for (int i = 0, j = 0; i < input_length;) {
+        uint32_t octet_a = i < input_length ? (unsigned char)input[i++] : 0;
+        uint32_t octet_b = i < input_length ? (unsigned char)input[i++] : 0;
+        uint32_t octet_c = i < input_length ? (unsigned char)input[i++] : 0;
 
-        uint32_t triple = (octet_a << 0x10) + (octet_b << 0x08) + octet_c;
+        uint32_t triple = (octet_a << 16) | (octet_b << 8) | octet_c;
 
-        output[j++] = base64_table[(triple >> 3 * 6) & 0x3F];
-        output[j++] = base64_table[(triple >> 2 * 6) & 0x3F];
-        output[j++] = base64_table[(triple >> 1 * 6) & 0x3F];
-        output[j++] = base64_table[(triple >> 0 * 6) & 0x3F];
+        encoded_data[j++] = encoding_table[(triple >> 18) & 0x3F];
+        encoded_data[j++] = encoding_table[(triple >> 12) & 0x3F];
+        encoded_data[j++] = encoding_table[(triple >> 6) & 0x3F];
+        encoded_data[j++] = encoding_table[triple & 0x3F];
     }
 
-    for (int k = 0; k < mod_table[length % 3]; k++)
-        output[*output_len - 1 - k] = '=';
-
-    output[j] = '\0';
+    for (int i = 0; i < mod_table[input_length % 3]; i++) {
+        encoded_data[output_length - 1 - i] = '=';
+    }
+    encoded_data[output_length] = '\0';
+    return encoded_data;
 }
 
 bool check_auth(const char *auth_header) {
     const char *user_pass = "admin:students";
-    char expected_auth[128];
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256((unsigned char*)user_pass, strlen(user_pass), hash);
-    base64_encode(hash, SHA256_DIGEST_LENGTH, expected_auth);
+    const char *expected_auth = base64_encode(user_pass);
 
     char auth_str[256];
     snprintf(auth_str, sizeof(auth_str), "Basic %s", expected_auth);
