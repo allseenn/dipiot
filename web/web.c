@@ -34,7 +34,6 @@ void *handle_client(void *arg) {
     client_info *client = (client_info *)arg;
     char buffer[BUF_SIZE];
     int client_socket = client->client_socket;
-    char *auth_header = strstr(buffer, "");
 
     while (1) {
         int result = recv(client_socket, buffer, BUF_SIZE, 0);
@@ -48,8 +47,8 @@ void *handle_client(void *arg) {
 
         buffer[result] = '\0';
         printf("%s\n", buffer);
-
-        if (!auth_header && !check_auth(auth_header)) {  
+        char *auth_header = strstr(buffer, "Authorization: ");
+        if (!check_auth(auth_header)) {  
             char response[1024] = "HTTP/1.1 401 Unauthorized\r\n"
                                   "WWW-Authenticate: Basic realm=\"User Visible Realm\"\r\n"
                                   "\r\n";
