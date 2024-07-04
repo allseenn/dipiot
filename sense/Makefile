@@ -11,6 +11,10 @@ bme680.o: bme680.c
 ${TARGET}.o: ${TARGET}.c
 	gcc -o ${TARGET}.o -c ${TARGET}.c
 
+install:
+	chmod 777 ${TARGET}
+	sudo cp ${TARGET} /usr/local/sbin
+	
 clean:
 	rm -rf *.o ${TARGET}
 
