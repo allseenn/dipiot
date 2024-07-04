@@ -97,7 +97,7 @@ int main(int argc, char const *argv[])
                 gas_sensor.gas_sett.heatr_dur = 150; /* milliseconds */
                 rslt = bme680_set_sensor_settings(set_required_settings,&gas_sensor);
                 rslt = bme680_set_sensor_mode(&gas_sensor);
-                
+                sleep(TIMEOUT);
             } 
             if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "") == 0)  {
                 printf("Usage: sense [-t -p -h -g]\n");
