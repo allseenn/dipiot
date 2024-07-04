@@ -1,4 +1,4 @@
-TARGET=main
+TARGET=sense
 
 all: ${TARGET}
 
