@@ -10,10 +10,7 @@
 #include <fcntl.h>
 
 #define IIC_Dev  "/dev/i2c-1"
-//#define channel 1
-#define BME680_FLOAT_POINT_COMPENSATION 1
-//#define USESPISINGLEREADWRITE 0 
-
+#define BME680_FLOAT_POINT_COMPENSATION
 
 int fd;
 
