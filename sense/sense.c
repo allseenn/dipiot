@@ -78,7 +78,7 @@ int main(int argc, char const *argv[])
     bme680_get_profile_dur(&meas_period, &gas_sensor);
     struct bme680_field_data data;
     rslt = bme680_get_sensor_data(&data, &gas_sensor);
-
+    sleep(1);
     for (int i = 1; i < argc; i++) {
             if (strcmp(argv[i], "-t") == 0) {
                 printf("T: %.2f" , data.temperature / 100.0f);
