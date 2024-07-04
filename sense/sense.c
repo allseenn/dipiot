@@ -87,7 +87,7 @@ int main(int argc, char const *argv[])
                 gas_sensor.tph_sett.os_hum = BME680_OS_2X;
                 set_required_settings = BME680_OST_SEL | BME680_OSP_SEL | BME680_OSH_SEL | BME680_FILTER_SEL | BME680_GAS_SENSOR_SEL;
                 rslt = bme680_set_sensor_settings(set_required_settings,&gas_sensor);
-                rslt = bme680_set_sensor_mode(&gas_sensor)
+                rslt = bme680_set_sensor_mode(&gas_sensor);
                 
             }
             if (strcmp(argv[i], "-g") == 0) {
