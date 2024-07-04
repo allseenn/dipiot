@@ -88,7 +88,7 @@ int main(int argc, char const *argv[])
                 printf("P: %.2f hPa, H %.2f %%rH ", data.pressure / 100.0f);
                 
             }
-            if (strcmp(argv[i], "-h") == 0) {
+            if (strcmp(argv[i], "-m") == 0) {
                 printf("H %.2f %%rH ", data.humidity / 1000.0f);
                 
             }
@@ -101,7 +101,7 @@ int main(int argc, char const *argv[])
                 printf("Usage: sense [-t -p -h -g]\n");
                 printf("-t: Temperature oversampling\n");
                 printf("-p: Pressure oversampling\n");
-                printf("-h: Humidity oversampling\n");
+                printf("-m: (moister) Humidity oversampling\n");
                 printf("-g: Enable gas measurement\n");
                 return 0;
             }
