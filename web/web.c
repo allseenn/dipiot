@@ -16,7 +16,7 @@ typedef struct {
 } client_info;
 
 bool check_auth(const char *auth_header) {
-    const char *user_pass = "admin:students";
+    const char *user_pass = "admin:YWRtaW46c3R1ZGVudHM=";
     char auth_str[256];
     snprintf(auth_str, sizeof(auth_str), "Basic %s", user_pass);
 
