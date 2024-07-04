@@ -84,7 +84,7 @@ int main(int argc, char const *argv[])
     rslt = bme680_get_sensor_data(&data, &gas_sensor);
     for (int i = 1; i < argc; i++) {
             if (strcmp(argv[i], "-g") == 0) {
-                printf("%f ", data.gas_resistance);
+                printf("%d ", data.gas_resistance);
 
             } 
             if (strcmp(argv[i], "-t") == 0) {
