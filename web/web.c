@@ -11,7 +11,7 @@
 #define BUF_SIZE 1024
 
 const char *USERNAME = "admin";
-const char *PASSWORD = "students";
+const char *PASSWORD = "YWRtaW46c3R1ZGVudHM=";
 
 typedef struct {
     int client_socket;
