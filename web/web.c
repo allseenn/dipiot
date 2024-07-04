@@ -6,6 +6,9 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <signal.h>
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+#include <openssl/buffer.h>
 
 #define PORT 8000
 #define BUF_SIZE 1024
@@ -15,47 +18,41 @@ typedef struct {
     struct sockaddr_in client_addr;
 } client_info;
 
-const char *base64_encode(const char *input) {
-    static const char encoding_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    int input_length = strlen(input);
-    int output_length = 4 * ((input_length + 2) / 3);
-    char *encoded_data = malloc(output_length + 1);
+char *base64_encode(const char *input) {
+    BIO *bio, *b64;
+    BUF_MEM *buffer_ptr;
+
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_new(BIO_s_mem());
+    bio = BIO_push(b64, bio);
+
+    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+    BIO_write(bio, input, strlen(input));
+    BIO_flush(bio);
+    BIO_get_mem_ptr(bio, &buffer_ptr);
+
+    char *encoded_data = (char *)malloc((buffer_ptr->length + 1) * sizeof(char));
     if (encoded_data == NULL) {
         perror("malloc");
         exit(EXIT_FAILURE);
     }
 
-    int mod_table[] = {0, 2, 1};
+    memcpy(encoded_data, buffer_ptr->data, buffer_ptr->length);
+    encoded_data[buffer_ptr->length] = '\0';
 
-    for (int i = 0, j = 0; i < input_length;) {
-        uint32_t octet_a = i < input_length ? (unsigned char)input[i++] : 0;
-        uint32_t octet_b = i < input_length ? (unsigned char)input[i++] : 0;
-        uint32_t octet_c = i < input_length ? (unsigned char)input[i++] : 0;
-
-        uint32_t triple = (octet_a << 16) | (octet_b << 8) | octet_c;
-
-        encoded_data[j++] = encoding_table[(triple >> 18) & 0x3F];
-        encoded_data[j++] = encoding_table[(triple >> 12) & 0x3F];
-        encoded_data[j++] = encoding_table[(triple >> 6) & 0x3F];
-        encoded_data[j++] = encoding_table[triple & 0x3F];
-    }
-
-    for (int i = 0; i < mod_table[input_length % 3]; i++) {
-        encoded_data[output_length - 1 - i] = '=';
-    }
-    encoded_data[output_length] = '\0';
+    BIO_free_all(bio);
     return encoded_data;
 }
 
 bool check_auth(const char *auth_header) {
     const char *user_pass = "admin:students";
-    const char *expected_auth = base64_encode(user_pass);
+    char *expected_auth = base64_encode(user_pass);
 
     char auth_str[256];
     snprintf(auth_str, sizeof(auth_str), "Basic %s", expected_auth);
 
     bool result = strcmp(auth_header, auth_str) == 0;
-    free((void*)expected_auth);
+    free(expected_auth);
     return result;
 }
 
