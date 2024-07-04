@@ -67,11 +67,6 @@ int main(int argc, char const *argv[])
     int8_t rslt = BME680_OK;
     rslt = bme680_init(&gas_sensor);
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-g") == 0) {            
-            gas_sensor.gas_sett.run_gas = BME680_ENABLE_GAS_MEAS;
-            gas_sensor.gas_sett.heatr_temp = 320; /* degree Celsius */
-            gas_sensor.gas_sett.heatr_dur = 150; /* milliseconds */
-        } 
         if (strcmp(argv[i], "-t") == 0) {
             gas_sensor.tph_sett.os_temp = BME680_OS_8X;  
         }
@@ -81,6 +76,11 @@ int main(int argc, char const *argv[])
         if (strcmp(argv[i], "-m") == 0) {
             gas_sensor.tph_sett.os_hum = BME680_OS_2X; 
         }
+        if (strcmp(argv[i], "-g") == 0) {            
+            gas_sensor.gas_sett.run_gas = BME680_ENABLE_GAS_MEAS;
+            gas_sensor.gas_sett.heatr_temp = 320; /* degree Celsius */
+            gas_sensor.gas_sett.heatr_dur = 150; /* milliseconds */
+        } 
         if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "") == 0)  {
             printf("Usage: sense [-t -p -h -g]\n");
             printf("-g: Gas measurement in Ohms\n");
