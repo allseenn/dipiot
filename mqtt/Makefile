@@ -9,3 +9,7 @@ $(TARGET): $(TARGET).c
 clean:
 	rm -f $(TARGET)
 
+install:
+	chmod 777 $(TARGET)
+	cp $(TARGET) /usr/local/sbin
+
