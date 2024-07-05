@@ -58,11 +58,18 @@ void *handle_client(void *arg) {
         fp = popen("sense -t -p -m -g", "r");
         while (fgets(results, sizeof(results), fp) != NULL);
         pclose(fp);
+        float arr[4];
+        int arr_i = 0;
+        char tmp[10];
+        int tmp_i = 0;
         for(int i = 0; i < 50; i++) {
-            if(results[i] == '\n')
-                results[i] = '\0';
-            if(results[i] == ' ')
-                results[i] = '\t';
+            tmp[tmp_i] = results[i];
+            tmp_i++;
+            if(results[i] == ' '){
+                arr[arr_i] = atof(tmp);
+                arr_i++;
+                tmp_i = 0;
+            }
         }
         char response[BUF_SIZE];
         snprintf(response, sizeof(response),
@@ -79,10 +86,9 @@ void *handle_client(void *arg) {
 "  <th>Давление</th>"
 "  <th>Влажность</td>"
 "  <th>Воздух</td></tr>"
-"  <tr><td></td><td></td><td></td><td></td></tr>"
+"  <tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
 "  <tr><td>Цельсия</td><td>mm/РтСт</td><td>проценты</td><td>Ом</td></tr></table>"
-"  <p>%s</p>"
-"</html>", results);
+"</html>", arr[0], arr[1], arr[2], arr[3]);
         send(client_socket, response, strlen(response), 0);
     }
 
