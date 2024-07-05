@@ -99,7 +99,7 @@ int main(int argc, char const *argv[])
         user_delay_ms(meas_period);
         rslt = bme680_get_sensor_data(&data, &gas_sensor);
     for (int i = 1; i < argc; i++) {
-        if(strcmp(argv[i], "-g") == 0) printf("%d ", data.gas_resistance);
+        if(strcmp(argv[i], "-g") == 0) printf("%d ", data.gas_resistance / 1000.0f);
         if(strcmp(argv[i], "-t") == 0) printf("%f ", data.temperature / 100.0f);
         if(strcmp(argv[i], "-p") == 0) printf("%f ", data.pressure / 100.0f*hectoPascal);
         if(strcmp(argv[i], "-m") == 0) printf("%f ", data.humidity / 1000.0f); 
