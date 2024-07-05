@@ -87,7 +87,7 @@ void *handle_client(void *arg) {
 "  <th>Давление</th>"
 "  <th>Влажность</td>"
 "  <th>Воздух</td></tr>"
-"  <tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
+"  <tr><td>%f</td><td>%f</td><td>%f</td><td>%f</td></tr>"
 "  <tr><td>Цельсия</td><td>mm/РтСт</td><td>проценты</td><td>Ом</td></tr></table>"
 "</html>", arr[0], arr[1], arr[2], arr[3]);
         send(client_socket, response, strlen(response), 0);
