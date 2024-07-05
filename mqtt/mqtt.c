@@ -1,24 +1,49 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
+#include "unistd.h"
 #include "MQTTClient.h"
 
-#define ADDRESS     "192.168.1.8:1883"
-#define CLIENTID    "ExampleClientPub"
-#define QOS         1
-#define TIMEOUT     10000L
+#define DEFAULT_ADDRESS "192.168.1.8:1883"
+#define CLIENTID        "ExampleClientPub"
+#define QOS             1
+#define TIMEOUT         10000L
 
 void publish_message(MQTTClient client, const char* topic, const char* payload);
 
 int main(int argc, char* argv[])
 {
+    const char* address = DEFAULT_ADDRESS;
+    const char* username = "admin";
+    const char* password = "students";
     const char* topics[] = {"temperature", "pressure", "humidity", "gas"};
     char buffer[256];
     char* tokens[4];
     int num_tokens = 0;
 
-    if (argc == 1) {
-        // Считываем данные из стандартного ввода
+    int opt;
+    while ((opt = getopt(argc, argv, "i:u:p:")) != -1) {
+        switch (opt) {
+            case 'i':
+                address = optarg;
+                break;
+            case 'u':
+                username = optarg;
+                break;
+            case 'p':
+                password = optarg;
+                break;
+            default:
+                fprintf(stderr, "Usage: %s [-i address] [-u username] [-p password] <temperature> [pressure] [humidity] [gas]\n", argv[0]);
+                return -1;
+        }
+    }
+
+    if (optind < argc) {
+        for (int i = optind; i < argc && num_tokens < 4; i++) {
+            tokens[num_tokens++] = argv[i];
+        }
+    } else {
         if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
             char* token = strtok(buffer, " ");
             while (token != NULL && num_tokens < 4) {
@@ -26,26 +51,17 @@ int main(int argc, char* argv[])
                 token = strtok(NULL, " ");
             }
         }
-    } else {
-        // Считываем данные из аргументов командной строки
-        if (argc < 2 || argc > 5) {
-            printf("Usage: %s <temperature> [pressure] [humidity] [gas]\n", argv[0]);
-            return -1;
-        }
-        for (int i = 1; i < argc; i++) {
-            tokens[num_tokens++] = argv[i];
-        }
     }
 
     MQTTClient client;
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
     int rc;
 
-    MQTTClient_create(&client, ADDRESS, CLIENTID, MQTTCLIENT_PERSISTENCE_NONE, NULL);
+    MQTTClient_create(&client, address, CLIENTID, MQTTCLIENT_PERSISTENCE_NONE, NULL);
     conn_opts.keepAliveInterval = 20;
     conn_opts.cleansession = 1;
-    conn_opts.username = "admin";
-    conn_opts.password = "students";
+    conn_opts.username = username;
+    conn_opts.password = password;
 
     if ((rc = MQTTClient_connect(client, &conn_opts)) != MQTTCLIENT_SUCCESS) {
         printf("Failed to connect, return code %d\n", rc);
