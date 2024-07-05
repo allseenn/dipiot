@@ -32,15 +32,10 @@ void *handle_client(void *arg) {
     char buffer[BUF_SIZE];
     int client_socket = client->client_socket;
     
-    FILE *ft;
-    FILE *fp;
-    FILE *fm;
-    FILE *fg;
-    char temp[10];
-    char press[10];
-    char hum[10];
-    char gas[10];
 
+    FILE *fp;
+    char results[50];
+    float temp, press, hum, gas;
     while (1) {
         int result = recv(client_socket, buffer, BUF_SIZE, 0);
         if (result < 0) {
@@ -60,19 +55,17 @@ void *handle_client(void *arg) {
             send(client_socket, response, strlen(response), 0);
             break;
         }
-
-        ft = popen("sense -t", "r");
-        while (fgets(temp, sizeof(temp), ft) != NULL);
-        pclose(ft);
-        fp = popen("sense -p", "r");
-        while (fgets(press, sizeof(press), fp) != NULL);
+    
+        fp = popen("sense -t -p -m -g", "r");
+        while (fgets(results, sizeof(press), fp) != NULL);
         pclose(fp);
-        fm = popen("sense -m", "r");
-        while (fgets(hum, sizeof(hum), fm) != NULL);
-        pclose(fm);
-        fg = popen("sense -g", "r");
-        while (fgets(gas, sizeof(gas), fg) != NULL);
-        pclose(fg);
+        for(int i = 0; i < 50; i++) {
+            if(results[i] == '\n') {
+                results[i] = '\0';
+                break;
+            }
+        }
+        sscanf(results, "%f %f %f %f", &temp, &press, &hum, &gas);
         char response[BUF_SIZE];
         snprintf(response, sizeof(response),
 "HTTP/1.1 200 OK\r\n"
@@ -90,7 +83,7 @@ void *handle_client(void *arg) {
 "  <th><Воздух</td></tr>"
 "  <tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
 "  <tr><td>Цельсия</td><td>mm/РтСт</td><td>проценты</td><td>Ом</td></tr></table>"
-"</html>", temp, press, hum, gas);
+"</html>", results);
         send(client_socket, response, strlen(response), 0);
     }
 
