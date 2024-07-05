@@ -12,15 +12,12 @@ void publish_message(MQTTClient client, const char* topic, const char* payload);
 
 int main(int argc, char* argv[])
 {
-    if (argc != 5) {
-        printf("Usage: %s <temperature> <pressure> <humidity> <gas>\n", argv[0]);
+    if (argc < 2 || argc > 5) {
+        printf("Usage: %s <temperature> [pressure] [humidity] [gas]\n", argv[0]);
         return -1;
     }
 
-    const char* temperature = argv[1];
-    const char* pressure = argv[2];
-    const char* humidity = argv[3];
-    const char* gas = argv[4];
+    const char* topics[] = {"temperature", "pressure", "humidity", "gas"};
 
     MQTTClient client;
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
@@ -37,10 +34,9 @@ int main(int argc, char* argv[])
         exit(-1);
     }
 
-    publish_message(client, "temperature", temperature);
-    publish_message(client, "pressure", pressure);
-    publish_message(client, "humidity", humidity);
-    publish_message(client, "gas", gas);
+    for (int i = 1; i < argc; i++) {
+        publish_message(client, topics[i - 1], argv[i]);
+    }
 
     MQTTClient_disconnect(client, 10000);
     MQTTClient_destroy(&client);
