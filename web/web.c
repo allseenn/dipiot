@@ -59,28 +59,6 @@ void *handle_client(void *arg) {
         fp = popen("sense -t", "r");
         while (fgets(results, sizeof(results), fp) != NULL);
         pclose(fp);
-        
-        int count = 0;
-        char* token = strtok(results, " ");
-
-        while(token != NULL && count < 4) {
-            switch(count) {
-                case 0:
-                    temp = atof(token);
-                    break;
-                case 1:
-                    press = atof(token);
-                    break;
-                case 2:
-                    hum = atof(token);
-                    break;
-                case 3:
-                    gas = atof(token);
-                    break;
-            }
-            token = strtok(NULL, " ");
-            count++;
-        }
 
 
         char response[BUF_SIZE];
@@ -98,9 +76,10 @@ void *handle_client(void *arg) {
 "  <th>Давление</th>"
 "  <th>Влажность</td>"
 "  <th><Воздух</td></tr>"
-"  <tr><td>%f</td><td>%f</td><td>%f</td><td>%f</td></tr>"
+"  <tr><td></td><td></td><td></td><td></td></tr>"
 "  <tr><td>Цельсия</td><td>mm/РтСт</td><td>проценты</td><td>Ом</td></tr></table>"
-"</html>", temp, press, hum, gas);
+"  <p>%s</p>"
+"</html>", results);
         send(client_socket, response, strlen(response), 0);
     }
 
