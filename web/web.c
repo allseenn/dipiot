@@ -33,7 +33,7 @@ void *handle_client(void *arg) {
     int client_socket = client->client_socket;
     
     FILE *fp;
-    char *results;
+    char results[100];
     float temp, press, hum, gas;
 
     while (1) {
@@ -56,7 +56,7 @@ void *handle_client(void *arg) {
             break;
         }
 
-        fp = popen("sense -t", "r");
+        fp = popen("sense -t -p -m -g", "r");
         while (fgets(results, sizeof(results), fp) != NULL);
         pclose(fp);
 
