@@ -12,12 +12,30 @@ void publish_message(MQTTClient client, const char* topic, const char* payload);
 
 int main(int argc, char* argv[])
 {
-    if (argc < 2 || argc > 5) {
-        printf("Usage: %s <temperature> [pressure] [humidity] [gas]\n", argv[0]);
-        return -1;
-    }
-
     const char* topics[] = {"temperature", "pressure", "humidity", "gas"};
+    char buffer[256];
+    char* tokens[4];
+    int num_tokens = 0;
+
+    if (argc == 1) {
+        // Считываем данные из стандартного ввода
+        if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
+            char* token = strtok(buffer, " ");
+            while (token != NULL && num_tokens < 4) {
+                tokens[num_tokens++] = token;
+                token = strtok(NULL, " ");
+            }
+        }
+    } else {
+        // Считываем данные из аргументов командной строки
+        if (argc < 2 || argc > 5) {
+            printf("Usage: %s <temperature> [pressure] [humidity] [gas]\n", argv[0]);
+            return -1;
+        }
+        for (int i = 1; i < argc; i++) {
+            tokens[num_tokens++] = argv[i];
+        }
+    }
 
     MQTTClient client;
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
@@ -34,8 +52,8 @@ int main(int argc, char* argv[])
         exit(-1);
     }
 
-    for (int i = 1; i < argc; i++) {
-        publish_message(client, topics[i - 1], argv[i]);
+    for (int i = 0; i < num_tokens; i++) {
+        publish_message(client, topics[i], tokens[i]);
     }
 
     MQTTClient_disconnect(client, 10000);
