@@ -56,7 +56,7 @@ void *handle_client(void *arg) {
         }
     
         fp = popen("sense -t -p -m -g", "r");
-        while (fgets(results, sizeof(press), fp) != NULL);
+        while (fgets(results, sizeof(results), fp) != NULL);
         pclose(fp);
         for(int i = 0; i < 50; i++) {
             if(results[i] == '\n')
@@ -64,7 +64,6 @@ void *handle_client(void *arg) {
             if(results[i] == ' ')
                 results[i] = '\t';
         }
-        sscanf(results, "%s %s %s %s", &temp, &press, &hum, &gas);
         char response[BUF_SIZE];
         snprintf(response, sizeof(response),
 "HTTP/1.1 200 OK\r\n"
