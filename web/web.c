@@ -35,7 +35,7 @@ void *handle_client(void *arg) {
 
     FILE *fp;
     char results[50];
-    float temp, press, hum, gas;
+    char *temp, *press, *hum, *gas;
     while (1) {
         int result = recv(client_socket, buffer, BUF_SIZE, 0);
         if (result < 0) {
@@ -65,7 +65,7 @@ void *handle_client(void *arg) {
                 break;
             }
         }
-        sscanf(results, "%f %f %f %f", &temp, &press, &hum, &gas);
+        sscanf(results, "%s %s %s %s", &temp, &press, &hum, &gas);
         char response[BUF_SIZE];
         snprintf(response, sizeof(response),
 "HTTP/1.1 200 OK\r\n"
@@ -80,7 +80,7 @@ void *handle_client(void *arg) {
 "  <table><tr><th>Температура</th>"
 "  <th>Давление</th>"
 "  <th>Влажность</td>"
-"  <th><Воздух</td></tr>"
+"  <th>Воздух</td></tr>"
 "  <tr><td>%f</td><td>%f</td><td>%f</td><td>%f</td></tr>"
 "  <tr><td>Цельсия</td><td>mm/РтСт</td><td>проценты</td><td>Ом</td></tr></table>"
 "</html>", temp, press, hum, gas);
