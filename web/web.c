@@ -66,6 +66,7 @@ void *handle_client(void *arg) {
             tmp[tmp_i] = results[i];
             tmp_i++;
             if(results[i] == ' '){
+                tmp[tmp_i] = '\0';
                 arr[arr_i] = atof(tmp);
                 arr_i++;
                 tmp_i = 0;
