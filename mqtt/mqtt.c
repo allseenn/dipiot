@@ -47,3 +47,4 @@ int main(int argc, char* argv[])
     MQTTClient_destroy(&client);
     return rc;
 }
+
