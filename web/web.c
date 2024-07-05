@@ -59,7 +59,30 @@ void *handle_client(void *arg) {
         fp = popen("sense -t", "r");
         while (fgets(results, sizeof(results), fp) != NULL);
         pclose(fp);
-        sscanf(results, "%f %f %f %f", temp, press, hum, gas);
+        
+        int count = 0;
+        char* token = strtok(results, " ");
+
+        while(token != NULL && count < 4) {
+            switch(count) {
+                case 0:
+                    temp = atof(token);
+                    break;
+                case 1:
+                    press = atof(token);
+                    break;
+                case 2:
+                    hum = atof(token);
+                    break;
+                case 3:
+                    gas = atof(token);
+                    break;
+            }
+            token = strtok(NULL, " ");
+            count++;
+        }
+
+
         char response[BUF_SIZE];
         snprintf(response, sizeof(response),
 "HTTP/1.1 200 OK\r\n"
