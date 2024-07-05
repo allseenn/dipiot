@@ -35,7 +35,6 @@ void *handle_client(void *arg) {
 
     FILE *fp;
     char results[50];
-    char *temp, *press, *hum, *gas;
     while (1) {
         int result = recv(client_socket, buffer, BUF_SIZE, 0);
         if (result < 0) {
@@ -60,10 +59,10 @@ void *handle_client(void *arg) {
         while (fgets(results, sizeof(press), fp) != NULL);
         pclose(fp);
         for(int i = 0; i < 50; i++) {
-            if(results[i] == '\n') {
+            if(results[i] == '\n')
                 results[i] = '\0';
-                break;
-            }
+            if(results[i] == ' ')
+                results[i] = '\t';
         }
         sscanf(results, "%s %s %s %s", &temp, &press, &hum, &gas);
         char response[BUF_SIZE];
@@ -81,9 +80,10 @@ void *handle_client(void *arg) {
 "  <th>Давление</th>"
 "  <th>Влажность</td>"
 "  <th>Воздух</td></tr>"
-"  <tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
+"  <tr><td></td><td></td><td></td><td></td></tr>"
 "  <tr><td>Цельсия</td><td>mm/РтСт</td><td>проценты</td><td>Ом</td></tr></table>"
-"</html>", temp, press, hum, gas);
+"  <p>%s</p>"
+"</html>", results);
         send(client_socket, response, strlen(response), 0);
     }
 
