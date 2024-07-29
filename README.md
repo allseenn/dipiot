@@ -84,7 +84,7 @@ API датчика охватывает базовую коммуникацию 
 ```
 GND          50 49    ADC_AIN3
 VDD_IO       48 47    ADC_AIN2
-SYS          46 45    VD16
+SYS (5V)     46 45    VD16
 VD13         44 43    VD22
 VD4          42 41    VD1
 VD23         40 39    VD9
