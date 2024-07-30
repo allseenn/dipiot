@@ -28,7 +28,7 @@
 /* definitions */
 
 #define DESTZONE "TZ=Europe/Moscow"
-#define temp_offset (0.0f)
+#define temp_offset (2.0f)
 #define sample_rate_mode (BSEC_SAMPLE_RATE_LP)
 
 int g_i2cFid; // I2C Linux device handle
@@ -205,14 +205,14 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   printf("%.2f ", humidity); /* % */
   printf("%.2f ", raw_humidity); /* % */
   printf("%.2f ", pressure / 100 * hectoPascal); /* hPa */
-  printf("%.d ", gas); /* GigaOhms */
+  printf("%.f ", gas); /* GigaOhms */
   printf("%.8f ", co2_equivalent); // eCO2 ppm
   printf("%.8f ", breath_voc_equivalent); //bVOCe ppm]
   printf("%.2f ", iaq); // IAQ
   printf("%.2f ", static_iaq); // static IAQ
   printf("%.2f ", iaq_accuracy); // IAQ accuracy
   printf("%d ", bsec_status);
-  printf("%d", timestamp);
+  printf("%ld", timestamp);
   //printf(",%" PRId64, timestamp_ms);
   printf("\r\n");
   fflush(stdout);
