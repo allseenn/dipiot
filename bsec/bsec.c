@@ -28,7 +28,7 @@
 /* definitions */
 
 #define DESTZONE "TZ=Europe/Moscow"
-#define temp_offset (10.0f)
+#define temp_offset (0.0f)
 #define sample_rate_mode (BSEC_SAMPLE_RATE_LP)
 
 int g_i2cFid; // I2C Linux device handle
@@ -198,23 +198,25 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   time_t t = time(NULL);
   struct tm tm = *localtime(&t);
 
-  //printf("%d-%02d-%02d %02d:%02d:%02d,", tm.tm_year + 1900,tm.tm_mon + 1,
-  //       tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec); /* localtime */
+
   printf("%.2f ", temperature); /* Celsius */
+  printf("%.2f ", raw_temperature); /* Celsius */
   printf("%.2f ", humidity); /* % */
+  printf("%.2f ", raw_humidity); /* % */
   printf("%.2f ", pressure / 100 * hectoPascal); /* hPa */
-  printf("%.0f ", gas); /* GigaOhms */
+  printf("%.d ", gas); /* GigaOhms */
   printf("%.8f ", co2_equivalent); // eCO2 ppm
   printf("%.8f ", breath_voc_equivalent); //bVOCe ppm]
   printf("%.2f ", iaq); // IAQ
   printf("%.2f ", static_iaq); // static IAQ
   printf("%.2f ", iaq_accuracy); // IAQ accuracy
-  printf("%d", bsec_status);
-  printf(",%" PRId64, timestamp);
+  printf("%d ", bsec_status);
+  printf("%d", timestamp);
   //printf(",%" PRId64, timestamp_ms);
   printf("\r\n");
   fflush(stdout);
 }
+
 
 /*
  * Load binary file from non-volatile memory into buffer
