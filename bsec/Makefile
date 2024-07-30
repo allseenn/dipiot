@@ -17,7 +17,7 @@ ${TARGET}.o: ${TARGET}.c
 
 install:
 	chmod 777 ${TARGET}
-	sudo cp ${TARGET} /usr/local/sbin
+	sudo cp ${TARGET} bsec_iaq.csv bsec_iaq.config bsec_iaq.state /usr/local/sbin
 	
 clean:
 	rm -rf *.o ${TARGET}

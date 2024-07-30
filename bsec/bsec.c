@@ -33,8 +33,8 @@
 
 int g_i2cFid; // I2C Linux device handle
 int i2c_address = BME680_I2C_ADDR_SECONDARY;
-char *filename_state = "bsec_iaq.state";
-char *filename_config = "bsec_iaq.config";
+char *filename_state = "/usr/local/sbin/bsec_iaq.state";
+char *filename_config = "/usr/local/sbin/bsec_iaq.config";
 
 /* functions */
 
@@ -199,7 +199,7 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   struct tm tm = *localtime(&t);
 
   //printf("%d-%02d-%02d %02d:%02d:%02d,", tm.tm_year + 1900,tm.tm_mon + 1,
-         tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec); /* localtime */
+  //       tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec); /* localtime */
   printf("[IAQ (%d)]: %.2f", iaq_accuracy, iaq);
   printf(",[T degC]: %.2f,[H %%rH]: %.2f,[P hPa]: %.2f", temperature,
          humidity,pressure / 100);
