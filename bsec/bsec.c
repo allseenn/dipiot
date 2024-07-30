@@ -212,7 +212,7 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   printf("%.2f ", static_iaq); // static IAQ
   printf("%.2f ", iaq_accuracy); // IAQ accuracy
   printf("%d ", bsec_status);
-  printf("%ld", timestamp);
+  printf("%" PRId64, timestamp);
   //printf(",%" PRId64, timestamp_ms);
   printf("\r\n");
   fflush(stdout);
