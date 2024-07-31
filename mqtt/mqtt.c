@@ -16,8 +16,11 @@ int main(int argc, char* argv[])
     const char* address = DEFAULT_ADDRESS;
     const char* username = "admin";
     const char* password = "students";
-    const char* topics[] = {"temperature", "raw_temperature", "humidity", "raw_humidity", "pressure", "gas", \
-        "co2_equivalent", "breath_voc_equivalent", "iaq", "static_iaq",  "iaq_accuracy", "bsec_status"};
+    const char* topics[] = {
+        "temperature", "raw_temperature", "humidity", "raw_humidity", 
+        "pressure", "gas", "co2_equivalent", "breath_voc_equivalent", 
+        "iaq", "static_iaq", "iaq_accuracy", "bsec_status"
+    };
 
     int opt;
     while ((opt = getopt(argc, argv, "i:u:p:")) != -1) {
@@ -32,7 +35,7 @@ int main(int argc, char* argv[])
                 password = optarg;
                 break;
             default:
-                fprintf(stderr, "Usage: %s [-i address] [-u username] [-p password] [t rt hu rhu p g ce be ia is iaq bs]\n", argv[0]);
+                fprintf(stderr, "Usage: %s [-i address] [-u username] [-p password]\n", argv[0]);
                 printf("t: temperature\nrt: raw temperature\nhu: humidity\nrhu: raw humidity\np: pressure\n");
                 printf("g: gas\nce: co2 equivalent\nbe: breath voc equivalent\n");
                 printf("ia: iaq\nis: static iaq\niaq: iaq accuracy\nbs: bsec status\n");
@@ -60,16 +63,12 @@ int main(int argc, char* argv[])
         buffer[strcspn(buffer, "\n")] = 0; // Remove the newline character
 
         char* token = strtok(buffer, " ");
-        char* tokens[4];
-        int num_tokens = 0;
+        int index = 0;
 
-        while (token != NULL && num_tokens < 4) {
-            tokens[num_tokens++] = token;
+        while (token != NULL && index < sizeof(topics)/sizeof(topics[0])) {
+            publish_message(client, topics[index], token);
             token = strtok(NULL, " ");
-        }
-
-        for (int i = 0; i < num_tokens; i++) {
-            publish_message(client, topics[i], tokens[i]);
+            index++;
         }
     }
 
@@ -96,4 +95,3 @@ void publish_message(MQTTClient client, const char* topic, const char* payload)
     rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
     printf("Message with delivery token %d delivered\n", token);
 }
-
