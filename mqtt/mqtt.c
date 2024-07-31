@@ -9,7 +9,7 @@
 #define QOS             1
 #define TIMEOUT         10000L
 
-void publish_message(MQTTClient client, const char* topic, const char* payload);
+void publish_message(MQTTClient client, const char* topic, const char* payload, int debug);
 
 int main(int argc, char* argv[])
 {
@@ -21,9 +21,10 @@ int main(int argc, char* argv[])
         "pressure", "gas", "co2_equivalent", "breath_voc_equivalent", 
         "iaq", "static_iaq", "iaq_accuracy", "bsec_status"
     };
+    int debug = 0;
 
     int opt;
-    while ((opt = getopt(argc, argv, "i:u:p:")) != -1) {
+    while ((opt = getopt(argc, argv, "i:u:p:d")) != -1) {
         switch (opt) {
             case 'i':
                 address = optarg;
@@ -34,13 +35,22 @@ int main(int argc, char* argv[])
             case 'p':
                 password = optarg;
                 break;
+            case 'd':
+                debug = 1;
+                break;
             default:
-                fprintf(stderr, "Usage: %s [-i address] [-u username] [-p password]\n", argv[0]);
+                fprintf(stderr, "Usage: %s [-i address] [-u username] [-p password] [-d]\n", argv[0]);
                 printf("t: temperature\nrt: raw temperature\nhu: humidity\nrhu: raw humidity\np: pressure\n");
                 printf("g: gas\nce: co2 equivalent\nbe: breath voc equivalent\n");
                 printf("ia: iaq\nis: static iaq\niaq: iaq accuracy\nbs: bsec status\n");
                 return -1;
         }
+    }
+
+    if (debug) {
+        printf("Using address: %s\n", address);
+        printf("Using username: %s\n", username);
+        printf("Using password: %s\n", password);
     }
 
     MQTTClient client;
@@ -58,6 +68,10 @@ int main(int argc, char* argv[])
         exit(-1);
     }
 
+    if (debug) {
+        printf("Connected to MQTT broker at %s\n", address);
+    }
+
     char buffer[256];
     while (fgets(buffer, sizeof(buffer), stdin) != NULL) {
         buffer[strcspn(buffer, "\n")] = 0; // Remove the newline character
@@ -66,7 +80,7 @@ int main(int argc, char* argv[])
         int index = 0;
 
         while (token != NULL && index < sizeof(topics)/sizeof(topics[0])) {
-            publish_message(client, topics[index], token);
+            publish_message(client, topics[index], token, debug);
             token = strtok(NULL, " ");
             index++;
         }
@@ -74,10 +88,15 @@ int main(int argc, char* argv[])
 
     MQTTClient_disconnect(client, 10000);
     MQTTClient_destroy(&client);
+
+    if (debug) {
+        printf("Disconnected from MQTT broker\n");
+    }
+
     return rc;
 }
 
-void publish_message(MQTTClient client, const char* topic, const char* payload)
+void publish_message(MQTTClient client, const char* topic, const char* payload, int debug)
 {
     MQTTClient_message pubmsg = MQTTClient_message_initializer;
     MQTTClient_deliveryToken token;
@@ -88,10 +107,20 @@ void publish_message(MQTTClient client, const char* topic, const char* payload)
     pubmsg.qos = QOS;
     pubmsg.retained = 0;
 
+    if (debug) {
+        printf("Publishing message: %s to topic: %s\n", payload, topic);
+    }
+
     MQTTClient_publishMessage(client, topic, &pubmsg, &token);
-    // printf("Waiting for up to %d seconds for publication of %s\n"
-    //        "on topic %s\n",
-    //        (int)(TIMEOUT / 1000), payload, topic);
+    if (debug) {
+        printf("Waiting for up to %d seconds for publication of %s\n"
+               "on topic %s\n",
+               (int)(TIMEOUT / 1000), payload, topic);
+    }
     rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
-    // printf("Message with delivery token %d delivered\n", token);
+
+    if (debug) {
+        printf("Message with delivery token %d delivered\n", token);
+    }
 }
+
