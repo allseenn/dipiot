@@ -34,7 +34,8 @@ int main(int argc, char* argv[])
                 password = optarg;
                 break;
             default:
-                fprintf(stderr, "Usage: %s [-i address] [-u username] [-p password] <temperature> [pressure] [humidity] [gas]\n", argv[0]);
+                fprintf(stderr, "Usage: %s [-i address] [-u username] [-p password] \
+                <temperature> [pressure] [humidity] [gas]\n", argv[0]);
                 return -1;
         }
     }
