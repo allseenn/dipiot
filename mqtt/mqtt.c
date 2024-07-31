@@ -89,9 +89,9 @@ void publish_message(MQTTClient client, const char* topic, const char* payload)
     pubmsg.retained = 0;
 
     MQTTClient_publishMessage(client, topic, &pubmsg, &token);
-    printf("Waiting for up to %d seconds for publication of %s\n"
-           "on topic %s\n",
-           (int)(TIMEOUT / 1000), payload, topic);
+    // printf("Waiting for up to %d seconds for publication of %s\n"
+    //        "on topic %s\n",
+    //        (int)(TIMEOUT / 1000), payload, topic);
     rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
-    printf("Message with delivery token %d delivered\n", token);
+    // printf("Message with delivery token %d delivered\n", token);
 }
