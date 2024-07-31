@@ -33,9 +33,9 @@ int main(int argc, char* argv[])
                 break;
             default:
                 fprintf(stderr, "Usage: %s [-i address] [-u username] [-p password] [t rt hu rhu p g ce be ia is iaq bs]\n", argv[0]);
-                fprintf("t: temperature\nrt: raw temperature\nhu: humidity\nrhu: raw humidity\np: pressure\n");
-                fprintf("g: gas\nce: co2 equivalent\nbe: breath voc equivalent\n");
-                fprintf("ia: iaq\nis: static iaq\niaq: iaq accuracy\nbs: bsec status\n");
+                printf("t: temperature\nrt: raw temperature\nhu: humidity\nrhu: raw humidity\np: pressure\n");
+                printf("g: gas\nce: co2 equivalent\nbe: breath voc equivalent\n");
+                printf("ia: iaq\nis: static iaq\niaq: iaq accuracy\nbs: bsec status\n");
                 return -1;
         }
     }
