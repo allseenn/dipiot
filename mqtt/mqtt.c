@@ -16,7 +16,8 @@ int main(int argc, char* argv[])
     const char* address = DEFAULT_ADDRESS;
     const char* username = "admin";
     const char* password = "students";
-    const char* topics[] = {"temperature", "pressure", "humidity", "gas"};
+    const char* topics[] = {"temperature", "raw_temperature", "humidity", "raw_humidity", "pressure", "gas", \
+        "co2_equivalent", "breath_voc_equivalent", "iaq", "static_iaq",  "iaq_accuracy", "bsec_status"};
 
     int opt;
     while ((opt = getopt(argc, argv, "i:u:p:")) != -1) {
@@ -31,12 +32,10 @@ int main(int argc, char* argv[])
                 password = optarg;
                 break;
             default:
-<<<<<<< HEAD
-                fprintf(stderr, "Usage: %s [-i address] [-u username] [-p password] \
-                <temperature> [pressure] [humidity] [gas]\n", argv[0]);
-=======
-                fprintf(stderr, "Usage: %s [-i address] [-u username] [-p password]\n", argv[0]);
->>>>>>> 75de61951e4398def23e077560f0810c8462fb89
+                fprintf(stderr, "Usage: %s [-i address] [-u username] [-p password] [t rt hu rhu p g ce be ia is iaq bs]\n", argv[0]);
+                fprintf("t: temperature\nrt: raw temperature\nhu: humidity\nrhu: raw humidity\np: pressure\n");
+                fprintf("g: gas\nce: co2 equivalent\nbe: breath voc equivalent\n");
+                fprintf("ia: iaq\nis: static iaq\niaq: iaq accuracy\nbs: bsec status\n");
                 return -1;
         }
     }
