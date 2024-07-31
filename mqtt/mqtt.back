@@ -17,6 +17,9 @@ int main(int argc, char* argv[])
     const char* username = "admin";
     const char* password = "students";
     const char* topics[] = {"temperature", "pressure", "humidity", "gas"};
+    char buffer[256];
+    char* tokens[4];
+    int num_tokens = 0;
 
     int opt;
     while ((opt = getopt(argc, argv, "i:u:p:")) != -1) {
@@ -31,8 +34,22 @@ int main(int argc, char* argv[])
                 password = optarg;
                 break;
             default:
-                fprintf(stderr, "Usage: %s [-i address] [-u username] [-p password]\n", argv[0]);
+                fprintf(stderr, "Usage: %s [-i address] [-u username] [-p password] <temperature> [pressure] [humidity] [gas]\n", argv[0]);
                 return -1;
+        }
+    }
+
+    if (optind < argc) {
+        for (int i = optind; i < argc && num_tokens < 4; i++) {
+            tokens[num_tokens++] = argv[i];
+        }
+    } else {
+        if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
+            char* token = strtok(buffer, " ");
+            while (token != NULL && num_tokens < 4) {
+                tokens[num_tokens++] = token;
+                token = strtok(NULL, " ");
+            }
         }
     }
 
@@ -51,22 +68,8 @@ int main(int argc, char* argv[])
         exit(-1);
     }
 
-    char buffer[256];
-    while (fgets(buffer, sizeof(buffer), stdin) != NULL) {
-        buffer[strcspn(buffer, "\n")] = 0; // Remove the newline character
-
-        char* token = strtok(buffer, " ");
-        char* tokens[4];
-        int num_tokens = 0;
-
-        while (token != NULL && num_tokens < 4) {
-            tokens[num_tokens++] = token;
-            token = strtok(NULL, " ");
-        }
-
-        for (int i = 0; i < num_tokens; i++) {
-            publish_message(client, topics[i], tokens[i]);
-        }
+    for (int i = 0; i < num_tokens; i++) {
+        publish_message(client, topics[i], tokens[i]);
     }
 
     MQTTClient_disconnect(client, 10000);
@@ -92,4 +95,3 @@ void publish_message(MQTTClient client, const char* topic, const char* payload)
     rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
     printf("Message with delivery token %d delivered\n", token);
 }
-
