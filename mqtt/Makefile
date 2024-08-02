@@ -10,6 +10,8 @@ clean:
 	rm -f $(TARGET)
 
 install:
-	chmod 777 $(TARGET)
-	cp $(TARGET) /usr/local/sbin
+	chmod 777 $(TARGET) bsec.sh
+	sudo cp $(TARGET) bsec.sh /usr/local/sbin
+	
+	
 
