@@ -7,25 +7,13 @@
 #include <pthread.h>
 #include <signal.h>
 
-#define PORT 8000
+#define PORT 8080
 #define BUF_SIZE 1024
-
-const char *USERNAME = "admin";
-const char *PASSWORD = "YWRtaW46c3R1ZGVudHM=";
 
 typedef struct {
     int client_socket;
     struct sockaddr_in client_addr;
 } client_info;
-
-
-bool check_auth(const char *auth_header) {
-    char expected_auth[256];
-    snprintf(expected_auth, sizeof(expected_auth), "Authorization: Basic %s", PASSWORD);
-    if(strcmp(auth_header, expected_auth) == 208)
-        return 0;
-    return 1;
-}
 
 void *handle_client(void *arg) {
     client_info *client = (client_info *)arg;
@@ -46,19 +34,11 @@ void *handle_client(void *arg) {
         }
 
         buffer[result] = '\0';
-        char *auth_header = strstr(buffer, "Authorization: Basic ");
-        if (!auth_header || check_auth(auth_header)) {  
-            char response[1024] = "HTTP/1.1 401 Unauthorized\r\n"
-                                  "WWW-Authenticate: Basic realm=\"User Visible Realm\"\r\n"
-                                  "\r\n";
-            send(client_socket, response, strlen(response), 0);
-            break;
-        }
     
-        fp = popen("sense -t -p -m -g", "r");
+        fp = popen("cat /tmp/bsec", "r");
         while (fgets(results, sizeof(results), fp) != NULL);
         pclose(fp);
-        float arr[4];
+        float arr[12];
         int arr_i = 0;
         char tmp[10];
         int tmp_i = 0;
@@ -80,16 +60,24 @@ void *handle_client(void *arg) {
 "<!DOCTYPE HTML>"
 "<html>"
 "  <head>"
-"  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" http-equiv=\"refresh\" content=\"5\">"
+"  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" http-equiv=\"refresh\" content=\"0\">"
 "  </head>"
 "  <h1>ODROID: WEB-MET</h1>"
-"  <table border=\"1\"><tr><th>Температура</th>"
-"  <th>Давление</th>"
-"  <th>Влажность</td>"
-"  <th>Воздух</td></tr>"
-"  <tr><td>%f</td><td>%f</td><td>%f</td><td>%f</td></tr>"
-"  <tr><td>Цельсия</td><td>mm/РтСт</td><td>проценты</td><td>Ом</td></tr></table>"
-"</html>", arr[0], arr[1], arr[2], arr[3]);
+"  <table border=\"1\"><tr><th>temp</th>"
+"  <th>raw_temp</th>"
+"  <th>humidity</td>"
+"  <th>raw_hum</td>"
+"  <th>press</td>"
+"  <th>gas</td>"
+"  <th>ceCO2</td>"
+"  <th>bVOC</td>"
+"  <th>IAQ</td>"
+"  <th>SIAQ</td>"
+"  <th>IAQ_ACC</td>"
+"  <th>status</td></tr>"
+"  <tr><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td></tr>"
+"  <tr><td>C</td><td>C</td><td>%</td><td>%</td><td>mmHg</td><td>KOM</td><td>ppm</td><td>ppm</td><td>index</td><td>index</td><td>num/td><td>num</td></tr></table>"
+"</html>", arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], arr[9], arr[10], arr[11]);
         send(client_socket, response, strlen(response), 0);
     }
 
@@ -125,7 +113,8 @@ int main() {
     server_addr.sin_addr.s_addr = htons(INADDR_ANY);
     server_addr.sin_port = htons(PORT);
 
-    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0  
+    ) {
         perror("Error binding connection");
         exit(EXIT_FAILURE);
     }
@@ -144,7 +133,6 @@ int main() {
 
         if (client->client_socket < 0) {
             if (!server_running) {
-                // Server is shutting down
                 free(client);
                 break;
             }
@@ -170,3 +158,4 @@ int main() {
 
     return 0;
 }
+
