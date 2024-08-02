@@ -1,6 +1,7 @@
 #!/bin/bash
-PATH=/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl
+set -x
 mkfifo /tmp/bsec
 /usr/local/sbin/bsec > /tmp/bsec &
+sleep 2
 cat /tmp/bsec | /usr/local/sbin/mqtt &
 

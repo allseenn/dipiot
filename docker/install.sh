@@ -1,7 +1,7 @@
 #!/bin/bash
 USERNAME=admin
 PASSWORD=students
-DOMEN=FILL IT !!!
+DOMEN=my.domen.ru
 ORG=IoT
 BUCKET=IoT
 INFLUXDB_TOKEN="kFhczFje8dRm2SXK1V9Ds7xpcJTr6wVUS881KQoUQWE-QAfcg-S-6j1FvFiSvWW0wTPlmWHCvXf_JU1hRx5rZg=="
