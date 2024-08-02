@@ -10,10 +10,22 @@
 #define PORT 8080
 #define BUF_SIZE 1024
 
+const char *USERNAME = "admin";
+const char *PASSWORD = "YWRtaW46c3R1ZGVudHM=";
+
 typedef struct {
     int client_socket;
     struct sockaddr_in client_addr;
 } client_info;
+
+
+bool check_auth(const char *auth_header) {
+    char expected_auth[256];
+    snprintf(expected_auth, sizeof(expected_auth), "Authorization: Basic %s", PASSWORD);
+    if(strcmp(auth_header, expected_auth) == 208)
+        return 0;
+    return 1;
+}
 
 void *handle_client(void *arg) {
     client_info *client = (client_info *)arg;
@@ -34,6 +46,14 @@ void *handle_client(void *arg) {
         }
 
         buffer[result] = '\0';
+        char *auth_header = strstr(buffer, "Authorization: Basic ");
+        if (!auth_header || check_auth(auth_header)) {  
+            char response[1024] = "HTTP/1.1 401 Unauthorized\r\n"
+                                  "WWW-Authenticate: Basic realm=\"User Visible Realm\"\r\n"
+                                  "\r\n";
+            send(client_socket, response, strlen(response), 0);
+            break;
+        }
     
         fp = popen("cat /tmp/bsec", "r");
         while (fgets(results, sizeof(results), fp) != NULL);
@@ -113,8 +133,7 @@ int main() {
     server_addr.sin_addr.s_addr = htons(INADDR_ANY);
     server_addr.sin_port = htons(PORT);
 
-    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0  
-    ) {
+    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
         perror("Error binding connection");
         exit(EXIT_FAILURE);
     }
@@ -158,4 +177,3 @@ int main() {
 
     return 0;
 }
-
