@@ -20,9 +20,9 @@ void *handle_client(void *arg) {
     char buffer[BUF_SIZE];
     int client_socket = client->client_socket;
     
-
     FILE *fp;
-    char results[50];
+    char line[99];
+    
     while (1) {
         int result = recv(client_socket, buffer, BUF_SIZE, 0);
         if (result < 0) {
@@ -35,23 +35,28 @@ void *handle_client(void *arg) {
 
         buffer[result] = '\0';
     
-        fp = popen("cat /tmp/bsec", "r");
-        while (fgets(results, sizeof(results), fp) != NULL);
-        pclose(fp);
-        float arr[12];
-        int arr_i = 0;
-        char tmp[10];
-        int tmp_i = 0;
-        for(int i = 0; i < 50; i++) {
-            tmp[tmp_i] = results[i];
-            tmp_i++;
-            if(results[i] == ' '){
-                tmp[tmp_i] = '\0';
-                arr[arr_i] = atof(tmp);
-                arr_i++;
-                tmp_i = 0;
-            }
+        fp = fopen("/tmp/bsec", "r");
+        if (fp == NULL) {
+            printf("Error opening file /tmp/bsec\n");
+            break;
         }
+        
+        if (fgets(line, sizeof(line), fp) == NULL) {
+            printf("Error reading from file /tmp/bsec\n");
+            fclose(fp);
+            break;
+        }
+        
+        fclose(fp);
+        
+        float arr[12] = {0};
+        int arr_i = 0;
+        char *token = strtok(line, " ");
+        while (token != NULL) {
+            arr[arr_i++] = atof(token);
+            token = strtok(NULL, " ");
+        }
+        
         char response[BUF_SIZE];
         snprintf(response, sizeof(response),
 "HTTP/1.1 200 OK\r\n"
@@ -60,7 +65,7 @@ void *handle_client(void *arg) {
 "<!DOCTYPE HTML>"
 "<html>"
 "  <head>"
-"  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" http-equiv=\"refresh\" content=\"0\">"
+"  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" http-equiv=\"refresh\" content=\"5\">"
 "  </head>"
 "  <h1>ODROID: WEB-MET</h1>"
 "  <table border=\"1\"><tr><th>temp</th>"
@@ -75,8 +80,8 @@ void *handle_client(void *arg) {
 "  <th>SIAQ</td>"
 "  <th>IAQ_ACC</td>"
 "  <th>status</td></tr>"
-"  <tr><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td></tr>"
-"  <tr><td>C</td><td>C</td><td>%</td><td>%</td><td>mmHg</td><td>KOM</td><td>ppm</td><td>ppm</td><td>index</td><td>index</td><td>num/td><td>num</td></tr></table>"
+"  <tr><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.2f</td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.0f</td></tr>"
+"  <tr><td>C</td><td>C</td><td>%</td><td>%</td><td>mmHg</td><td>KOM</td><td>ppm</td><td>ppm</td><td>index</td><td>index</td><td>num</td><td>num</td></tr></table>"
 "</html>", arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], arr[9], arr[10], arr[11]);
         send(client_socket, response, strlen(response), 0);
     }
