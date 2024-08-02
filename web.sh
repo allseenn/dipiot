@@ -1,10 +1,7 @@
 #!/bin/bash
-
 while true; do
-    # Чтение данных из именованного конвейера
-    read line < /tmp/bsec_output
-    echo "WEB получил: $line"
-    # Обработка данных для веб-сервера
-    # ...
+    line = `cat /tmp/bsec`
+    echo "$line"
+    echo "$line" > /tmp/bsec
 done
 
