@@ -19,48 +19,6 @@ void *handle_client(void *arg) {
     client_info *client = (client_info *)arg;
     int client_socket = client->client_socket;
 
-    // Отправка начального HTML с таблицей
-    char response[BUF_SIZE];
-    snprintf(response, sizeof(response),
-    "HTTP/1.1 200 OK\r\n"
-    "Content-Type: text/html; charset=utf-8\r\n"
-    "\r\n"
-    "<!DOCTYPE HTML>"
-    "<html>"
-    "  <head>"
-    "    <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-    "    <meta http-equiv=\"refresh\" content=\"3\">"
-    "  </head>"
-    "  <body>"
-    "    <h1>ODROID: WEB-MET</h1>"
-    "    <table border=\"1\" id=\"data-table\">"
-    "      <tr><th>temp</th>"
-    "      <th>raw_temp</th>"
-    "      <th>humidity</th>"
-    "      <th>raw_hum</th>"
-    "      <th>press</th>"
-    "      <th>gas</th>"
-    "      <th>ceCO2</th>"
-    "      <th>bVOC</th>"
-    "      <th>IAQ</th>"
-    "      <th>SIAQ</th>"
-    "      <th>IAQ_ACC</th>"
-    "      <th>status</th>"
-    "      <th>Dynamic Rad</th>"
-    "      <th>Static Rad</th></tr>"
-    "      <tr><td colspan=\"14\" id=\"data-row\">Загрузка...</td></tr>"
-    "    </table>"
-    "    <script>"
-    "      function updateData(temp, raw_temp, humidity, raw_hum, press, gas, ceCO2, bVOC, IAQ, SIAQ, IAQ_ACC, status, dynamicRad, staticRad) {"
-    "        const row = document.getElementById('data-row');"
-    "        row.innerHTML = `<td>${temp.toFixed(1)}</td><td>${raw_temp.toFixed(1)}</td><td>${humidity.toFixed(1)}</td><td>${raw_hum.toFixed(1)}</td><td>${press.toFixed(0)}</td><td>${gas.toFixed(0)}</td><td>${ceCO2.toFixed(0)}</td><td>${bVOC.toFixed(2)}</td><td>${IAQ.toFixed(0)}</td><td>${SIAQ.toFixed(0)}</td><td>${IAQ_ACC.toFixed(0)}</td><td>${status}</td><td>${dynamicRad}</td><td>${staticRad}</td>`;"
-    "      }"
-    "    </script>"
-    "  </body>"
-    "</html>");
-
-    send(client_socket, response, strlen(response), 0);
-
     while (1) {
         FILE *fp;
         char line[99];
@@ -76,16 +34,13 @@ void *handle_client(void *arg) {
             fclose(fp);
             break;
         }
-
         fclose(fp);
 
         float arr[12] = {0};
         int arr_i = 0;
         char *token = strtok(line, " ");
         while (token != NULL) {
-            if (arr_i < 12) {
-                arr[arr_i++] = atof(token);
-            }
+            arr[arr_i++] = atof(token);
             token = strtok(NULL, " ");
         }
 
@@ -101,20 +56,51 @@ void *handle_client(void *arg) {
             break;
         }
 
-         
         while (fgets(rad_line, sizeof(rad_line), fp_rad) != NULL) {
             sscanf(rad_line, "%d %d", &rad[0], &rad[1]);
         }
         pclose(fp_rad);
 
-        // Формируем и отправляем новый набор данных
-        char update[1024];
-        snprintf(update, sizeof(update),
-            "updateData(%.1f, %.1f, %.1f, %.1f, %.0f, %.0f, %.0f, %.2f, %.0f, %.0f, %.0f, %.0f, %d, %d);",
-            arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], arr[9], arr[10], arr[11], rad[0], rad[1]);
+        char response[BUF_SIZE];
+        snprintf(response, sizeof(response),
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: text/html; charset=utf-8\r\n"
+            "Refresh: 3\r\n"  // Обновляем страницу каждые 3 секунды
+            "\r\n"
+            "<!DOCTYPE HTML>"
+            "<html>"
+            "<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"></head>"
+            "<h1>ODROID: WEB-MET</h1>"
+            "<table border=\"1\"><tr><th>temp</th>"
+            "<th>raw_temp</th>"
+            "<th>humidity</th>"
+            "<th>raw_hum</th>"
+            "<th>press</th>"
+            "<th>gas</th>"
+            "<th>ceCO2</th>"
+            "<th>bVOC</th>"
+            "<th>IAQ</th>"
+            "<th>SIAQ</th>"
+            "<th>IAQ_ACC</th>"
+            "<th>status</th>"
+            "<th>Dynamic Rad</th>"
+            "<th>Static Rad</th></tr>"
+            "<tr><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%.1f</td>"
+            "<td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.2f</td>"
+            "<td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.0f</td>"
+            "<td>%d</td><td>%d</td></tr>"
+            "<tr><td>C&deg;</td><td>C&deg;</td><td>&percnt;</td><td>&percnt;</td>"
+            "<td>mmHg</td><td>KOM</td><td>ppm</td><td>ppm</td>"
+            "<td>index</td><td>index</td><td>num</td><td>num</td>"
+            "<td>&mu;R/h</td></tr>" 
+            "<td>&mu;R/h</td></tr></table>"
+            "</html>", arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], arr[9], arr[10], arr[11], rad[0], rad[1]);
 
-        send(client_socket, update, strlen(update), 0);
-        sleep(3); // Пауза перед следующими данными
+        // Отправляем ответ клиенту
+        send(client_socket, response, strlen(response), 0);
+        
+        // Пауза перед следующим обновлением данных
+        sleep(3); // Задержка в 3 секунды перед следующей итерацией
     }
 
     close(client_socket);
@@ -176,7 +162,7 @@ int main() {
             continue;
         }
 
-        printf("=> Connected with the client, you are good to go...\n");
+        printf("=> Connected with the client\n");
 
         if (pthread_create(&tid, NULL, handle_client, (void *)client) != 0) {
             perror("Could not create thread");
