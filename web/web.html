@@ -10,8 +10,6 @@
             flex-direction: wrap;
             align-items: center;
             justify-content: space-between;
-            height: 100vh;
-            background-color: #f5f5f5;
         }
     </style>
     <script>
@@ -38,10 +36,9 @@
         setInterval(updateData, 3000);
     </script>
 </head>
-
 <body onload="updateData()">
-    <section class="metrics">
     <h1>ODROID: WEB-MET</h1>
+    <section class="metrics">
     <div class="temp">&#127777;
         <p id="temp"></p>
         C&deg;
