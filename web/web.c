@@ -8,7 +8,7 @@
 #include <signal.h>
 
 #define PORT 8080
-#define BUF_SIZE 1024
+#define BUF_SIZE 8096
 
 typedef struct {
     int client_socket;
