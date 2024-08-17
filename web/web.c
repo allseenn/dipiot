@@ -19,51 +19,47 @@ void *handle_client(void *arg) {
     client_info *client = (client_info *)arg;
     int client_socket = client->client_socket;
 
-    while (1) {
-        FILE *fp;
-        char line[99];
+    FILE *fp;
+    char line[99];
 
-        fp = fopen("/tmp/bsec", "r");
-        if (fp == NULL) {
-            printf("Error opening file /tmp/bsec\n");
-            break;
-        }
-        
-        if (fgets(line, sizeof(line), fp) == NULL) {
-            printf("Error reading from file /tmp/bsec\n");
-            fclose(fp);
-            break;
-        }
-
+    fp = fopen("/tmp/bsec", "r");
+    if (fp == NULL) {
+        printf("Error opening file /tmp/bsec\n");
+    }
+    
+    if (fgets(line, sizeof(line), fp) == NULL) {
+        printf("Error reading from file /tmp/bsec\n");
         fclose(fp);
+    }
 
-        float arr[12] = {0};
-        int arr_i = 0;
-        char *token = strtok(line, " ");
-        while (token != NULL) {
-            arr[arr_i++] = atof(token);
-            token = strtok(NULL, " ");
-        }
+    fclose(fp);
 
-        int rad[2];
-        char cmd[100];
-        FILE *fp_rad;
-        char rad_line[50];
+    float arr[12] = {0};
+    int arr_i = 0;
+    char *token = strtok(line, " ");
+    while (token != NULL) {
+        arr[arr_i++] = atof(token);
+        token = strtok(NULL, " ");
+    }
 
-        sprintf(cmd, "./rad.sh");
-        fp_rad = popen(cmd, "r");
-        if (fp_rad == NULL) {
-            printf("Failed to run command\n");
-            break;
-        }
+    int rad[2];
+    char cmd[100];
+    FILE *fp_rad;
+    char rad_line[50];
 
-        while (fgets(rad_line, sizeof(rad_line), fp_rad) != NULL) {
-            sscanf(rad_line, "%d %d", &rad[0], &rad[1]);
-        }
-        pclose(fp_rad);
+    sprintf(cmd, "./rad.sh");
+    fp_rad = popen(cmd, "r");
+    if (fp_rad == NULL) {
+        printf("Failed to run command\n");
+    }
 
-        char response[BUF_SIZE];
-        snprintf(response, sizeof(response),
+    while (fgets(rad_line, sizeof(rad_line), fp_rad) != NULL) {
+        sscanf(rad_line, "%d %d", &rad[0], &rad[1]);
+    }
+    pclose(fp_rad);
+
+    char response[BUF_SIZE];
+    snprintf(response, sizeof(response),
 "HTTP/1.1 200 OK\r\n"
 "Content-Type: text/html; charset=utf-8\r\n"
 "Connection: close\r\n" 
@@ -97,15 +93,14 @@ void *handle_client(void *arg) {
 "  <td>index</td><td>index</td><td>num</td><td>num</td>"
 "  <td>&mu;R/h</td><td>&mu;R/h</td></tr></table>"
 "</html>", arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], arr[9], arr[10], arr[11], rad[0], rad[1]);
-        
-        send(client_socket, response, strlen(response), 0);
-        sleep(3);
-    }
-
-    close(client_socket);
-    free(client);
-    pthread_exit(NULL);
+    
+    send(client_socket, response, strlen(response), 0);
+    sleep(3);
 }
+
+close(client_socket);
+free(client);
+
 
 volatile sig_atomic_t server_running = 1;
 int server_socket;
