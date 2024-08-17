@@ -64,13 +64,6 @@ void *handle_client(void *arg) {
 
         char response[BUF_SIZE];
         snprintf(response, sizeof(response),
-"HTTP/1.1 200 OK\r\n"
-"Content-Type: text/html; charset=utf-8\r\n"
-"Connection: close\r\n"
-"Cache-Control: no-cache, no-store, must-revalidate\r\n"
-"Pragma: no-cache\r\n"
-"Expires: 0\r\n"
-"\r\n"
 "<!DOCTYPE HTML>"
 "<html>"
 "  <head>"
