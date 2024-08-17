@@ -1,3 +1,24 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <stdbool.h>
+#include <pthread.h>
+#include <signal.h>
+#include <stddef.h>
+
+#define PORT 8080
+#define BUF_SIZE 1024
+
+typedef struct {
+    int client_socket;
+    struct sockaddr_in client_addr;
+} client_info;
+
+volatile sig_atomic_t server_running = 1;
+int server_socket;
+
 void *handle_client(void *arg) {
     client_info *client = (client_info *)arg;
     int client_socket = client->client_socket;
@@ -74,22 +95,19 @@ void *handle_client(void *arg) {
 "  <td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.2f</td>"
 "  <td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.0f</td>"
 "  <td>%d</td><td>%d</td></tr>"
-"  <tr><td>C&deg;</td><td>C&deg;</td><td>&percnt;</td><td>&percnt;</td>"
-"  <td>mmHg</td><td>KOM</td><td>ppm</td><td>ppm</td>"
-"  <td>index</td><td>index</td><td>num</td><td>num</td>"
-"  <td>&mu;R/h</td><td>&mu;R/h</td></tr></table>"
-"</html>", arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], arr[9], arr[10], arr[11], rad[0], rad[1]);
+"  <tr><td>C&deg;</td><td>C&deg;</td><td>&percnt;</td><td>&percnt;</td><td>hPa</td><td>Ohm</td><td>ppm</td><td>ppb</td><td>&percnt;</td><td>&percnt;</td><td>&percnt;</td><td>&percnt;</td><td>W/m&sup2;</td><td>W/m&sup2;</td></tr>"
+"</table>"
+"</html>",
+arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], arr[9], arr[10], arr[11], rad[0], rad[1]);
 
-    int sent = send(client_socket, response, strlen(response), MSG_DONTWAIT);
-    if (sent < 0) {
-        perror("Error sending response");
-    }
+    write(client_socket, response, strlen(response));
 
 cleanup:
     close(client_socket);
     free(client);
-    pthread_exit(NULL);
+    return NULL;
 }
+
 int main() {
     struct sockaddr_in server_addr;
     socklen_t size;
@@ -152,5 +170,12 @@ int main() {
     printf("Goodbye...\n");
 
     return 0;
+}
+
+void handle_signal(int sig) {
+    if (sig == SIGINT) {
+        printf("Received SIGINT, shutting down server...\n");
+        server_running = 0;
+    }
 }
 
