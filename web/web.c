@@ -57,6 +57,22 @@ void *handle_client(void *arg) {
             token = strtok(NULL, " ");
         }
         
+        int rad[2];
+        char cmd[100];
+        FILE *fp;
+        char line[50];
+
+        sprintf(cmd, "./rad.sh");
+        fp = popen(cmd, "r");
+        if (fp == NULL) {
+            printf("Failed to run command\n");
+            break;
+        }
+        while (fgets(line, sizeof(line), fp) != NULL) {
+            sscanf(line, "%d %d", &rad[0], &rad[1]);
+        }
+        pclose(fp);
+
         char response[BUF_SIZE];
         snprintf(response, sizeof(response),
 "HTTP/1.1 200 OK\r\n"
