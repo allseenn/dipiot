@@ -15,10 +15,7 @@ typedef struct {
     struct sockaddr_in client_addr;
 } client_info;
 
-void *handle_client(void *arg) {
-    client_info *client = (client_info *)arg;
-    int client_socket = client->client_socket;
-
+void send_html_response(int client_socket) {
     char response[BUF_SIZE];
     snprintf(response, sizeof(response),
 "HTTP/1.1 200 OK\r\n"
@@ -81,64 +78,85 @@ void *handle_client(void *arg) {
 "  </body>"
 "</html>");
     send(client_socket, response, strlen(response), 0);
+}
 
-    while (1) {
-        FILE *fp;
-        char line[99];
+void send_json_data(int client_socket) {
+    FILE *fp;
+    char line[99];
 
-        fp = fopen("/tmp/bsec", "r");
-        if (fp == NULL) {
-            printf("Error opening file /tmp/bsec\n");
-            break;
-        }
-        
-        if (fgets(line, sizeof(line), fp) == NULL) {
-            printf("Error reading from file /tmp/bsec\n");
-            fclose(fp);
-            break;
-        }
-
+    fp = fopen("/tmp/bsec", "r");
+    if (fp == NULL) {
+        printf("Error opening file /tmp/bsec\n");
+        return;
+    }
+    
+    if (fgets(line, sizeof(line), fp) == NULL) {
+        printf("Error reading from file /tmp/bsec\n");
         fclose(fp);
+        return;
+    }
 
-        float arr[12] = {0};
-        int arr_i = 0;
-        char *token = strtok(line, " ");
-        while (token != NULL) {
-            arr[arr_i++] = atof(token);
-            token = strtok(NULL, " ");
-        }
+    fclose(fp);
 
-        int rad[2];
-        char cmd[100];
-        FILE *fp_rad;
-        char rad_line[50];
+    float arr[12] = {0};
+    int arr_i = 0;
+    char *token = strtok(line, " ");
+    while (token != NULL) {
+        arr[arr_i++] = atof(token);
+        token = strtok(NULL, " ");
+    }
 
-        sprintf(cmd, "./rad.sh");
-        fp_rad = popen(cmd, "r");
-        if (fp_rad == NULL) {
-            printf("Failed to run command\n");
-            break;
-        }
+    int rad[2];
+    char cmd[100];
+    FILE *fp_rad;
+    char rad_line[50];
 
-        while (fgets(rad_line, sizeof(rad_line), fp_rad) != NULL) {
-            sscanf(rad_line, "%d %d", &rad[0], &rad[1]);
-        }
-        pclose(fp_rad);
+    sprintf(cmd, "./rad.sh");
+    fp_rad = popen(cmd, "r");
+    if (fp_rad == NULL) {
+        printf("Failed to run command\n");
+        return;
+    }
 
-        // Prepare JSON data
-        char json_response[BUF_SIZE];
-        snprintf(json_response, sizeof(json_response),
-            "{"
-            "\"temp\": %.1f, \"raw_temp\": %.1f, \"humidity\": %.1f, \"raw_hum\": %.1f,"
-            "\"press\": %.0f, \"gas\": %.0f, \"ceCO2\": %.0f, \"bVOC\": %.2f,"
-            "\"IAQ\": %.0f, \"SIAQ\": %.0f, \"IAQ_ACC\": %.0f, \"status\": %.0f,"
-            "\"dyn_rad\": %d, \"stat_rad\": %d"
-            "}", arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7],
-            arr[8], arr[9], arr[10], arr[11], rad[0], rad[1]);
+    while (fgets(rad_line, sizeof(rad_line), fp_rad) != NULL) {
+        sscanf(rad_line, "%d %d", &rad[0], &rad[1]);
+    }
+    pclose(fp_rad);
 
-        // Send JSON data as response
-        send(client_socket, json_response, strlen(json_response), 0);
-        sleep(3);
+    char json_response[BUF_SIZE];
+    snprintf(json_response, sizeof(json_response),
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: application/json\r\n"
+        "\r\n"
+        "{"
+        "\"temp\": %.1f, \"raw_temp\": %.1f, \"humidity\": %.1f, \"raw_hum\": %.1f,"
+        "\"press\": %.0f, \"gas\": %.0f, \"ceCO2\": %.0f, \"bVOC\": %.2f,"
+        "\"IAQ\": %.0f, \"SIAQ\": %.0f, \"IAQ_ACC\": %.0f, \"status\": %.0f,"
+        "\"dyn_rad\": %d, \"stat_rad\": %d"
+        "}", arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7],
+        arr[8], arr[9], arr[10], arr[11], rad[0], rad[1]);
+
+    send(client_socket, json_response, strlen(json_response), 0);
+}
+
+void *handle_client(void *arg) {
+    client_info *client = (client_info *)arg;
+    int client_socket = client->client_socket;
+
+    char request[BUF_SIZE];
+    int received = recv(client_socket, request, BUF_SIZE - 1, 0);
+    if (received < 0) {
+        perror("Error receiving request");
+        close(client_socket);
+        free(client);
+        pthread_exit(NULL);
+    }
+    request[received] = '\0';
+
+    if (strstr(request, "GET /data") != NULL) {
+        send_json_data(client_socket);
+    } else {
+        send_html_response(client_socket);
     }
 
     close(client_socket);
@@ -186,7 +204,7 @@ int main() {
     signal(SIGINT, handle_signal);
 
     pthread_t tid;
-    while (server_running) {
+       while (server_running) {
         client_info *client = malloc(sizeof(client_info));
         client->client_socket = accept(server_socket, (struct sockaddr*)&client->client_addr, &size);
 
@@ -217,3 +235,4 @@ int main() {
 
     return 0;
 }
+
