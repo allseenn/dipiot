@@ -11,8 +11,6 @@
 #define PORT 8080
 #define BUF_SIZE 1024
 
-void handle_signal(int sig);
-
 typedef struct {
     int client_socket;
     struct sockaddr_in client_addr;
@@ -71,6 +69,8 @@ void *handle_client(void *arg) {
     snprintf(response, sizeof(response),
 "HTTP/1.1 200 OK\r\n"
 "Content-Type: text/html; charset=utf-8\r\n"
+"Connection: close\r\n"
+"\r\n"
 "<!DOCTYPE HTML>"
 "<html>"
 "  <head>"
@@ -95,7 +95,7 @@ void *handle_client(void *arg) {
 "  <td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.2f</td>"
 "  <td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.0f</td>"
 "  <td>%d</td><td>%d</td></tr>"
-"  <tr><td>C&deg;</td><td>C&deg;</td><td>&percnt;</td><td>&percnt;</td><td>hPa</td><td>Ohm</td><td>ppm</td><td>ppb</td><td>&percnt;</td><td>&percnt;</td><td>&percnt;</td><td>&percnt;</td><td>W/m&sup2;</td><td>W/m&sup2;</td></tr>"
+"  <tr><td>C&deg;</td><td>C&deg;</td><td>&percnt;</td><td>hPa</td><td>Ohm</td><td>ppm</td><td>ppb</td><td>&percnt;</td><td>&percnt;</td><td>&percnt;</td><td>&percnt;</td><td>W/m&sup2;</td><td>W/m&sup2;</td></tr>"
 "</table>"
 "</html>",
 arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], arr[9], arr[10], arr[11], rad[0], rad[1]);
@@ -176,6 +176,7 @@ void handle_signal(int sig) {
     if (sig == SIGINT) {
         printf("Received SIGINT, shutting down server...\n");
         server_running = 0;
+        close(server_socket);
     }
 }
-
+ 
