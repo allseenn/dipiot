@@ -6,97 +6,155 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <signal.h>
-#include <stddef.h>
 
 #define PORT 8080
 #define BUF_SIZE 1024
-#define MAX_RETRIES 3
-
-void *handle_client(void *arg);
-void handle_signal(int sig);
 
 typedef struct {
     int client_socket;
     struct sockaddr_in client_addr;
 } client_info;
 
-volatile sig_atomic_t server_running = 1;
-int server_socket;
-
 void *handle_client(void *arg) {
     client_info *client = (client_info *)arg;
     int client_socket = client->client_socket;
-    int retries = 0;
-
-    FILE *fp;
-    char line[99];
-
-    fp = fopen("/tmp/bsec", "r");
-    if (fp == NULL) {
-        printf("Error opening file /tmp/bsec\n");
-        goto cleanup;
-    }
-
-    if (fgets(line, sizeof(line), fp) == NULL) {
-        printf("Error reading from file /tmp/bsec\n");
-        fclose(fp);
-        goto cleanup;
-    }
-
-    fclose(fp);
-
-    float arr[12] = {0};
-    int arr_i = 0;
-    char *token = strtok(line, " ");
-    while (token != NULL) {
-        arr[arr_i++] = atof(token);
-        token = strtok(NULL, " ");
-    }
-
-    int rad[2];
-    char cmd[100];
-    FILE *fp_rad;
-    char rad_line[50];
-
-    sprintf(cmd, "./rad.sh");
-    fp_rad = popen(cmd, "r");
-    if (fp_rad == NULL) {
-        printf("Failed to run command\n");
-        goto cleanup;
-    }
-
-    while (fgets(rad_line, sizeof(rad_line), fp_rad) != NULL) {
-        sscanf(rad_line, "%d %d", &rad[0], &rad[1]);
-    }
-    pclose(fp_rad);
 
     char response[BUF_SIZE];
     snprintf(response, sizeof(response),
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Type: text/html; charset=utf-8\r\n"
-        "Connection: close\r\n"
-        "\r\n"
-        "<!DOCTYPE HTML>"
-        "<!-- ... (остальной HTML-код) ... -->");
+"HTTP/1.1 200 OK\r\n"
+"Content-Type: text/html; charset=utf-8\r\n"
+"\r\n"
+"<!DOCTYPE HTML>"
+"<html>"
+"  <head>"
+"  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+"  <script>"
+"  function updateData() {"
+"    fetch('/data').then(response => response.json()).then(data => {"
+"      document.getElementById('temp').textContent = data.temp.toFixed(1);"
+"      document.getElementById('raw_temp').textContent = data.raw_temp.toFixed(1);"
+"      document.getElementById('humidity').textContent = data.humidity.toFixed(1);"
+"      document.getElementById('raw_hum').textContent = data.raw_hum.toFixed(1);"
+"      document.getElementById('press').textContent = data.press.toFixed(0);"
+"      document.getElementById('gas').textContent = data.gas.toFixed(0);"
+"      document.getElementById('ceCO2').textContent = data.ceCO2.toFixed(0);"
+"      document.getElementById('bVOC').textContent = data.bVOC.toFixed(2);"
+"      document.getElementById('IAQ').textContent = data.IAQ.toFixed(0);"
+"      document.getElementById('SIAQ').textContent = data.SIAQ.toFixed(0);"
+"      document.getElementById('IAQ_ACC').textContent = data.IAQ_ACC.toFixed(0);"
+"      document.getElementById('status').textContent = data.status.toFixed(0);"
+"      document.getElementById('dyn_rad').textContent = data.dyn_rad.toFixed(0);"
+"      document.getElementById('stat_rad').textContent = data.stat_rad.toFixed(0);"
+"    });"
+"  }"
+"  setInterval(updateData, 3000);"
+"  </script>"
+"  </head>"
+"  <body onload=\"updateData()\">"
+"  <h1>ODROID: WEB-MET</h1>"
+"  <table border=\"1\">"
+"  <tr><th>temp</th><th>raw_temp</th><th>humidity</th><th>raw_hum</th>"
+"      <th>press</th><th>gas</th><th>ceCO2</th><th>bVOC</th>"
+"      <th>IAQ</th><th>SIAQ</th><th>IAQ_ACC</th><th>status</th>"
+"      <th>Dynamic Rad</th><th>Static Rad</th></tr>"
+"  <tr>"
+"    <td id=\"temp\"></td>"
+"    <td id=\"raw_temp\"></td>"
+"    <td id=\"humidity\"></td>"
+"    <td id=\"raw_hum\"></td>"
+"    <td id=\"press\"></td>"
+"    <td id=\"gas\"></td>"
+"    <td id=\"ceCO2\"></td>"
+"    <td id=\"bVOC\"></td>"
+"    <td id=\"IAQ\"></td>"
+"    <td id=\"SIAQ\"></td>"
+"    <td id=\"IAQ_ACC\"></td>"
+"    <td id=\"status\"></td>"
+"    <td id=\"dyn_rad\"></td>"
+"    <td id=\"stat_rad\"></td>"
+"  </tr>"
+"  <tr><td>C&deg;</td><td>C&deg;</td><td>&percnt;</td><td>&percnt;</td>"
+"      <td>mmHg</td><td>KOM</td><td>ppm</td><td>ppm</td>"
+"      <td>index</td><td>index</td><td>num</td><td>num</td>"
+"      <td>&mu;R/h</td><td>&mu;R/h</td></tr>"
+"  </table>"
+"  </body>"
+"</html>");
+    send(client_socket, response, strlen(response), 0);
 
-    while (retries < MAX_RETRIES) {
-        ssize_t bytes_sent = write(client_socket, response, strlen(response));
-        if (bytes_sent < 0) {
-            perror("Error writing to client socket");
-            retries++;
-            continue;
+    while (1) {
+        FILE *fp;
+        char line[99];
+
+        fp = fopen("/tmp/bsec", "r");
+        if (fp == NULL) {
+            printf("Error opening file /tmp/bsec\n");
+            break;
         }
-        break;
+        
+        if (fgets(line, sizeof(line), fp) == NULL) {
+            printf("Error reading from file /tmp/bsec\n");
+            fclose(fp);
+            break;
+        }
+
+        fclose(fp);
+
+        float arr[12] = {0};
+        int arr_i = 0;
+        char *token = strtok(line, " ");
+        while (token != NULL) {
+            arr[arr_i++] = atof(token);
+            token = strtok(NULL, " ");
+        }
+
+        int rad[2];
+        char cmd[100];
+        FILE *fp_rad;
+        char rad_line[50];
+
+        sprintf(cmd, "./rad.sh");
+        fp_rad = popen(cmd, "r");
+        if (fp_rad == NULL) {
+            printf("Failed to run command\n");
+            break;
+        }
+
+        while (fgets(rad_line, sizeof(rad_line), fp_rad) != NULL) {
+            sscanf(rad_line, "%d %d", &rad[0], &rad[1]);
+        }
+        pclose(fp_rad);
+
+        // Prepare JSON data
+        char json_response[BUF_SIZE];
+        snprintf(json_response, sizeof(json_response),
+            "{"
+            "\"temp\": %.1f, \"raw_temp\": %.1f, \"humidity\": %.1f, \"raw_hum\": %.1f,"
+            "\"press\": %.0f, \"gas\": %.0f, \"ceCO2\": %.0f, \"bVOC\": %.2f,"
+            "\"IAQ\": %.0f, \"SIAQ\": %.0f, \"IAQ_ACC\": %.0f, \"status\": %.0f,"
+            "\"dyn_rad\": %d, \"stat_rad\": %d"
+            "}", arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7],
+            arr[8], arr[9], arr[10], arr[11], rad[0], rad[1]);
+
+        // Send JSON data as response
+        send(client_socket, json_response, strlen(json_response), 0);
+        sleep(3);
     }
 
-    if (retries == MAX_RETRIES) {
-        printf("Failed to send response to client after %d retries\n", MAX_RETRIES);
-    }
-
-cleanup:
     close(client_socket);
     free(client);
-    return NULL;
+    pthread_exit(NULL);
+}
+
+volatile sig_atomic_t server_running = 1;
+int server_socket;
+
+void handle_signal(int sig) {
+    if (sig == SIGINT) {
+        printf("\nReceived SIGINT. Shutting down server...\n");
+        server_running = 0;
+        close(server_socket);
+    }
 }
 
 int main() {
@@ -123,13 +181,11 @@ int main() {
     size = sizeof(server_addr);
     printf("=> Looking for clients...\n");
 
-    if (listen(server_socket, 5) < 0) {
-        perror("Error listening for connections");
-        exit(EXIT_FAILURE);
-    }
+    listen(server_socket, 5);
 
     signal(SIGINT, handle_signal);
 
+    pthread_t tid;
     while (server_running) {
         client_info *client = malloc(sizeof(client_info));
         client->client_socket = accept(server_socket, (struct sockaddr*)&client->client_addr, &size);
@@ -146,7 +202,6 @@ int main() {
 
         printf("=> Connected with the client, you are good to go...\n");
 
-        pthread_t tid;
         if (pthread_create(&tid, NULL, handle_client, (void *)client) != 0) {
             perror("Could not create thread");
             free(client);
@@ -162,12 +217,3 @@ int main() {
 
     return 0;
 }
-
-void handle_signal(int sig) {
-    if (sig == SIGINT) {
-        printf("Received SIGINT, shutting down server...\n");
-        server_running = 0;
-        close(server_socket);
-    }
-}
- 
