@@ -19,7 +19,7 @@ bool debug_mode = false;  // Global flag for debug mode
 
 void send_html_response(int client_socket) {
     char response[BUF_SIZE];
-    FILE *html_file = fopen("web.html", "r");
+    FILE *html_file = fopen("/usr/local/sbin/web.html", "r");
 
     if (html_file == NULL) {
         perror("Error opening web.html");

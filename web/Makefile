@@ -11,4 +11,4 @@ clean:
 
 install: 
 	chmod 777 ${TARGET} *.sh *.html
-	sudo cp ${TARGET} *.sh /usr/local/sbin
+	sudo cp ${TARGET} *.sh *.html /usr/local/sbin
