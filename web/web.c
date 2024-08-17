@@ -34,6 +34,7 @@ void *handle_client(void *arg) {
             fclose(fp);
             break;
         }
+
         fclose(fp);
 
         float arr[12] = {0};
@@ -63,44 +64,45 @@ void *handle_client(void *arg) {
 
         char response[BUF_SIZE];
         snprintf(response, sizeof(response),
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Type: text/html; charset=utf-8\r\n"
-            "Refresh: 3\r\n"  // Обновляем страницу каждые 3 секунды
-            "\r\n"
-            "<!DOCTYPE HTML>"
-            "<html>"
-            "<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"></head>"
-            "<h1>ODROID: WEB-MET</h1>"
-            "<table border=\"1\"><tr><th>temp</th>"
-            "<th>raw_temp</th>"
-            "<th>humidity</th>"
-            "<th>raw_hum</th>"
-            "<th>press</th>"
-            "<th>gas</th>"
-            "<th>ceCO2</th>"
-            "<th>bVOC</th>"
-            "<th>IAQ</th>"
-            "<th>SIAQ</th>"
-            "<th>IAQ_ACC</th>"
-            "<th>status</th>"
-            "<th>Dynamic Rad</th>"
-            "<th>Static Rad</th></tr>"
-            "<tr><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%.1f</td>"
-            "<td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.2f</td>"
-            "<td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.0f</td>"
-            "<td>%d</td><td>%d</td></tr>"
-            "<tr><td>C&deg;</td><td>C&deg;</td><td>&percnt;</td><td>&percnt;</td>"
-            "<td>mmHg</td><td>KOM</td><td>ppm</td><td>ppm</td>"
-            "<td>index</td><td>index</td><td>num</td><td>num</td>"
-            "<td>&mu;R/h</td></tr>" 
-            "<td>&mu;R/h</td></tr></table>"
-            "</html>", arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], arr[9], arr[10], arr[11], rad[0], rad[1]);
-
-        // Отправляем ответ клиенту
-        send(client_socket, response, strlen(response), 0);
+"HTTP/1.1 200 OK\r\n"
+"Content-Type: text/html; charset=utf-8\r\n"
+"Connection: close\r\n"
+"Cache-Control: no-cache, no-store, must-revalidate\r\n"
+"Pragma: no-cache\r\n"
+"Expires: 0\r\n"
+"\r\n"
+"<!DOCTYPE HTML>"
+"<html>"
+"  <head>"
+"  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" http-equiv=\"refresh\" content=\"3\">"
+"  </head>"
+"  <h1>ODROID: WEB-MET</h1>"
+"  <table border=\"1\"><tr><th>temp</th>"
+"  <th>raw_temp</th>"
+"  <th>humidity</th>"
+"  <th>raw_hum</th>"
+"  <th>press</th>"
+"  <th>gas</th>"
+"  <th>ceCO2</th>"
+"  <th>bVOC</th>"
+"  <th>IAQ</th>"
+"  <th>SIAQ</th>"
+"  <th>IAQ_ACC</th>"
+"  <th>status</th>"
+"  <th>Dynamic Rad</th>"
+"  <th>Static Rad</th></tr>"
+"  <tr><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%.1f</td>"
+"  <td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.2f</td>"
+"  <td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.0f</td>"
+"  <td>%d</td><td>%d</td></tr>"
+"  <tr><td>C&deg;</td><td>C&deg;</td><td>&percnt;</td><td>&percnt;</td>"
+"  <td>mmHg</td><td>KOM</td><td>ppm</td><td>ppm</td>"
+"  <td>index</td><td>index</td><td>num</td><td>num</td>"
+"  <td>&mu;R/h</td><td>&mu;R/h</td></tr></table>"
+"</html>", arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], arr[9], arr[10], arr[11], rad[0], rad[1]);
         
-        // Пауза перед следующим обновлением данных
-        sleep(3); // Задержка в 3 секунды перед следующей итерацией
+        send(client_socket, response, strlen(response), 0);
+        sleep(3);
     }
 
     close(client_socket);
@@ -162,7 +164,7 @@ int main() {
             continue;
         }
 
-        printf("=> Connected with the client\n");
+        printf("=> Connected with the client, you are good to go...\n");
 
         if (pthread_create(&tid, NULL, handle_client, (void *)client) != 0) {
             perror("Could not create thread");
