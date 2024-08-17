@@ -71,7 +71,7 @@ void *handle_client(void *arg) {
 "<!DOCTYPE HTML>"
 "<html>"
 "  <head>"
-"  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" http-equiv=\"refresh\" content=\"3\">"
+"  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" http-equiv=\"reload\" content=\"3\">"
 "  </head>"
 "  <h1>ODROID: WEB-MET</h1>"
 "  <table border=\"1\"><tr><th>temp</th>"
