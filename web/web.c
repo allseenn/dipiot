@@ -66,6 +66,7 @@ void *handle_client(void *arg) {
         snprintf(response, sizeof(response),
 "HTTP/1.1 200 OK\r\n"
 "Content-Type: text/html; charset=utf-8\r\n"
+"Connection: close\r\n" 
 "\r\n"
 "<!DOCTYPE HTML>"
 "<html>"
