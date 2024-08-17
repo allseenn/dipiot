@@ -10,68 +10,58 @@
 #define PORT 8080
 #define BUF_SIZE 1024
 
-const char *USERNAME = "admin";
-const char *PASSWORD = "YWRtaW46c3R1ZGVudHM=";
-
 typedef struct {
     int client_socket;
     struct sockaddr_in client_addr;
 } client_info;
 
-
-bool check_auth(const char *auth_header) {
-    char expected_auth[256];
-    snprintf(expected_auth, sizeof(expected_auth), "Authorization: Basic %s", PASSWORD);
-    if(strcmp(auth_header, expected_auth) == 208)
-        return 0;
-    return 1;
-}
-
 void *handle_client(void *arg) {
     client_info *client = (client_info *)arg;
-    char buffer[BUF_SIZE];
     int client_socket = client->client_socket;
-    
 
-    FILE *fp;
-    char results[50];
     while (1) {
-        int result = recv(client_socket, buffer, BUF_SIZE, 0);
-        if (result < 0) {
-            printf("\n\n=> Connection terminated error %d with IP %s\n", result, inet_ntoa(client->client_addr.sin_addr));
+        FILE *fp;
+        char line[99];
+
+        fp = fopen("/tmp/bsec", "r");
+        if (fp == NULL) {
+            printf("Error opening file /tmp/bsec\n");
             break;
-        } else if (result == 0) {
-            printf("\n\n=> Connection closed by client IP %s\n", inet_ntoa(client->client_addr.sin_addr));
+        }
+        
+        if (fgets(line, sizeof(line), fp) == NULL) {
+            printf("Error reading from file /tmp/bsec\n");
+            fclose(fp);
             break;
         }
 
-        buffer[result] = '\0';
-        char *auth_header = strstr(buffer, "Authorization: Basic ");
-        if (!auth_header || check_auth(auth_header)) {  
-            char response[1024] = "HTTP/1.1 401 Unauthorized\r\n"
-                                  "WWW-Authenticate: Basic realm=\"User Visible Realm\"\r\n"
-                                  "\r\n";
-            send(client_socket, response, strlen(response), 0);
+        fclose(fp);
+
+        float arr[12] = {0};
+        int arr_i = 0;
+        char *token = strtok(line, " ");
+        while (token != NULL) {
+            arr[arr_i++] = atof(token);
+            token = strtok(NULL, " ");
+        }
+
+        int rad[2];
+        char cmd[100];
+        FILE *fp_rad;
+        char rad_line[50];
+
+        sprintf(cmd, "./rad.sh");
+        fp_rad = popen(cmd, "r");
+        if (fp_rad == NULL) {
+            printf("Failed to run command\n");
             break;
         }
-    
-        fp = popen("cat /tmp/bsec", "r");
-        while (fgets(results, sizeof(results), fp) != NULL);
-        pclose(fp);
-        float arr[12];
-        int arr_i = 0;
-        char tmp[10];
-        int tmp_i = 0;
-        for(int i = 0; i < 50; i++) {
-            tmp[tmp_i] = results[i];
-            tmp_i++;
-            if(results[i] == ' '){
-                tmp[tmp_i] = '\0';
-                arr[arr_i] = atof(tmp);
-                arr_i++;
-                tmp_i = 0;
-            }
+
+        while (fgets(rad_line, sizeof(rad_line), fp_rad) != NULL) {
+            sscanf(rad_line, "%d %d", &rad[0], &rad[1]);
         }
+        pclose(fp_rad);
+
         char response[BUF_SIZE];
         snprintf(response, sizeof(response),
 "HTTP/1.1 200 OK\r\n"
@@ -80,25 +70,35 @@ void *handle_client(void *arg) {
 "<!DOCTYPE HTML>"
 "<html>"
 "  <head>"
-"  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" http-equiv=\"refresh\" content=\"0\">"
+"  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" http-equiv=\"refresh\" content=\"3\">"
 "  </head>"
 "  <h1>ODROID: WEB-MET</h1>"
 "  <table border=\"1\"><tr><th>temp</th>"
 "  <th>raw_temp</th>"
-"  <th>humidity</td>"
-"  <th>raw_hum</td>"
-"  <th>press</td>"
-"  <th>gas</td>"
-"  <th>ceCO2</td>"
-"  <th>bVOC</td>"
-"  <th>IAQ</td>"
-"  <th>SIAQ</td>"
-"  <th>IAQ_ACC</td>"
-"  <th>status</td></tr>"
-"  <tr><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td><td>%f</td></tr>"
-"  <tr><td>C</td><td>C</td><td>%</td><td>%</td><td>mmHg</td><td>KOM</td><td>ppm</td><td>ppm</td><td>index</td><td>index</td><td>num/td><td>num</td></tr></table>"
-"</html>", arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], arr[9], arr[10], arr[11]);
+"  <th>humidity</th>"
+"  <th>raw_hum</th>"
+"  <th>press</th>"
+"  <th>gas</th>"
+"  <th>ceCO2</th>"
+"  <th>bVOC</th>"
+"  <th>IAQ</th>"
+"  <th>SIAQ</th>"
+"  <th>IAQ_ACC</th>"
+"  <th>status</th>"
+"  <th>Dynamic Rad</th>"
+"  <th>Static Rad</th></tr>"
+"  <tr><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%.1f</td>"
+"  <td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.2f</td>"
+"  <td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.0f</td>"
+"  <td>%d</td><td>%d</td></tr>"
+"  <tr><td>C&deg;</td><td>C&deg;</td><td>&percnt;</td><td>&percnt;</td>"
+"  <td>mmHg</td><td>KOM</td><td>ppm</td><td>ppm</td>"
+"  <td>index</td><td>index</td><td>num</td><td>num</td>"
+"  <td>&mu;R/h</td><td>&mu;R/h</td></tr></table>"
+"</html>", arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], arr[9], arr[10], arr[11], rad[0], rad[1]);
+        
         send(client_socket, response, strlen(response), 0);
+        sleep(3);
     }
 
     close(client_socket);
@@ -130,7 +130,7 @@ int main() {
     printf("=> Socket server has been created...\n");
 
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htons(INADDR_ANY);
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     server_addr.sin_port = htons(PORT);
 
     if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
