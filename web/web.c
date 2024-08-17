@@ -19,7 +19,7 @@ void *handle_client(void *arg) {
     client_info *client = (client_info *)arg;
     int client_socket = client->client_socket;
 
-    // Отправляем начальный HTML с таблицей
+    // Отправка начального HTML с таблицей
     char response[BUF_SIZE];
     snprintf(response, sizeof(response),
     "HTTP/1.1 200 OK\r\n"
@@ -28,7 +28,8 @@ void *handle_client(void *arg) {
     "<!DOCTYPE HTML>"
     "<html>"
     "  <head>"
-    "    <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" http-equiv=\"refresh\" content=\"3\">"
+    "    <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+    "    <meta http-equiv=\"refresh\" content=\"3\">"
     "  </head>"
     "  <body>"
     "    <h1>ODROID: WEB-MET</h1>"
@@ -47,28 +48,12 @@ void *handle_client(void *arg) {
     "      <th>status</th>"
     "      <th>Dynamic Rad</th>"
     "      <th>Static Rad</th></tr>"
-    "      <tr id=\"data-row\">"
-    "        <td></td><td></td><td></td><td></td>"
-    "        <td></td><td></td><td></td><td></td>"
-    "        <td></td><td></td><td></td><td></td>"
-    "        <td></td><td></td></tr>"
+    "      <tr><td colspan=\"14\" id=\"data-row\">Загрузка...</td></tr>"
     "    </table>"
     "    <script>"
     "      function updateData(temp, raw_temp, humidity, raw_hum, press, gas, ceCO2, bVOC, IAQ, SIAQ, IAQ_ACC, status, dynamicRad, staticRad) {"
-    "        document.querySelector('#data-row td:nth-child(1)').innerText = temp;"
-    "        document.querySelector('#data-row td:nth-child(2)').innerText = raw_temp;"
-    "        document.querySelector('#data-row td:nth-child(3)').innerText = humidity;"
-    "        document.querySelector('#data-row td:nth-child(4)').innerText = raw_hum;"
-    "        document.querySelector('#data-row td:nth-child(5)').innerText = press;"
-    "        document.querySelector('#data-row td:nth-child(6)').innerText = gas;"
-    "        document.querySelector('#data-row td:nth-child(7)').innerText = ceCO2;"
-    "        document.querySelector('#data-row td:nth-child(8)').innerText = bVOC;"
-    "        document.querySelector('#data-row td:nth-child(9)').innerText = IAQ;"
-    "        document.querySelector('#data-row td:nth-child(10)').innerText = SIAQ;"
-    "        document.querySelector('#data-row td:nth-child(11)').innerText = IAQ_ACC;"
-    "        document.querySelector('#data-row td:nth-child(12)').innerText = status;"
-    "        document.querySelector('#data-row td:nth-child(13)').innerText = dynamicRad;"
-    "        document.querySelector('#data-row td:nth-child(14)').innerText = staticRad;"
+    "        const row = document.getElementById('data-row');"
+    "        row.innerHTML = `<td>${temp.toFixed(1)}</td><td>${raw_temp.toFixed(1)}</td><td>${humidity.toFixed(1)}</td><td>${raw_hum.toFixed(1)}</td><td>${press.toFixed(0)}</td><td>${gas.toFixed(0)}</td><td>${ceCO2.toFixed(0)}</td><td>${bVOC.toFixed(2)}</td><td>${IAQ.toFixed(0)}</td><td>${SIAQ.toFixed(0)}</td><td>${IAQ_ACC.toFixed(0)}</td><td>${status}</td><td>${dynamicRad}</td><td>${staticRad}</td>`;"
     "      }"
     "    </script>"
     "  </body>"
@@ -83,22 +68,24 @@ void *handle_client(void *arg) {
         fp = fopen("/tmp/bsec", "r");
         if (fp == NULL) {
             printf("Error opening file /tmp/bsec\n");
-            break; // Завершаем цикл, если не удалось открыть файл
+            break;
         }
         
         if (fgets(line, sizeof(line), fp) == NULL) {
             printf("Error reading from file /tmp/bsec\n");
-             
             fclose(fp);
-            break; // Завершаем цикл, если была ошибка чтения
+            break;
         }
+
         fclose(fp);
 
         float arr[12] = {0};
         int arr_i = 0;
         char *token = strtok(line, " ");
-        while (token != NULL && arr_i < 12) {
-            arr[arr_i++] = atof(token);
+        while (token != NULL) {
+            if (arr_i < 12) {
+                arr[arr_i++] = atof(token);
+            }
             token = strtok(NULL, " ");
         }
 
@@ -107,31 +94,26 @@ void *handle_client(void *arg) {
         FILE *fp_rad;
         char rad_line[50];
 
-        // Выполнение команды для получения данных радиации
         sprintf(cmd, "./rad.sh");
         fp_rad = popen(cmd, "r");
         if (fp_rad == NULL) {
             printf("Failed to run command\n");
-            break; // Завершение цикла в случае ошибки
+            break;
         }
 
-        if (fgets(rad_line, sizeof(rad_line), fp_rad) != NULL) {
+         
+        while (fgets(rad_line, sizeof(rad_line), fp_rad) != NULL) {
             sscanf(rad_line, "%d %d", &rad[0], &rad[1]);
         }
         pclose(fp_rad);
 
-        // Формирование строки обновления с данными
-        char update[BUF_SIZE];
+        // Формируем и отправляем новый набор данных
+        char update[1024];
         snprintf(update, sizeof(update),
             "updateData(%.1f, %.1f, %.1f, %.1f, %.0f, %.0f, %.0f, %.2f, %.0f, %.0f, %.0f, %.0f, %d, %d);",
-            arr[0], arr[1], arr[2], arr[3],
-            arr[4], arr[5], arr[6], arr[7],
-            arr[8], arr[9], arr[10], arr[11],
-            rad[0], rad[1]);
+            arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], arr[9], arr[10], arr[11], rad[0], rad[1]);
 
-        // Отправляем JavaScript функцию для обновления данных
         send(client_socket, update, strlen(update), 0);
-
         sleep(3); // Пауза перед следующими данными
     }
 
@@ -176,7 +158,7 @@ int main() {
     printf("=> Looking for clients...\n");
 
     listen(server_socket, 5);
-    
+
     signal(SIGINT, handle_signal);
 
     pthread_t tid;
