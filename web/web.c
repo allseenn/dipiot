@@ -1,20 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <stdbool.h>
-#include <pthread.h>
-#include <signal.h>
-
-#define PORT 8080
-#define BUF_SIZE 1024
-
-typedef struct {
-    int client_socket;
-    struct sockaddr_in client_addr;
-} client_info;
-
 void *handle_client(void *arg) {
     client_info *client = (client_info *)arg;
     int client_socket = client->client_socket;
@@ -25,11 +8,13 @@ void *handle_client(void *arg) {
     fp = fopen("/tmp/bsec", "r");
     if (fp == NULL) {
         printf("Error opening file /tmp/bsec\n");
+        goto cleanup;
     }
     
     if (fgets(line, sizeof(line), fp) == NULL) {
         printf("Error reading from file /tmp/bsec\n");
         fclose(fp);
+        goto cleanup;
     }
 
     fclose(fp);
@@ -51,6 +36,7 @@ void *handle_client(void *arg) {
     fp_rad = popen(cmd, "r");
     if (fp_rad == NULL) {
         printf("Failed to run command\n");
+        goto cleanup;
     }
 
     while (fgets(rad_line, sizeof(rad_line), fp_rad) != NULL) {
@@ -62,7 +48,7 @@ void *handle_client(void *arg) {
     snprintf(response, sizeof(response),
 "HTTP/1.1 200 OK\r\n"
 "Content-Type: text/html; charset=utf-8\r\n"
-"Connection: close\r\n" 
+"Connection: close\r\n"
 "\r\n"
 "<!DOCTYPE HTML>"
 "<html>"
@@ -93,26 +79,17 @@ void *handle_client(void *arg) {
 "  <td>index</td><td>index</td><td>num</td><td>num</td>"
 "  <td>&mu;R/h</td><td>&mu;R/h</td></tr></table>"
 "</html>", arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], arr[9], arr[10], arr[11], rad[0], rad[1]);
-    
-    send(client_socket, response, strlen(response), 0);
-    sleep(3);
-}
 
-close(client_socket);
-free(client);
-
-
-volatile sig_atomic_t server_running = 1;
-int server_socket;
-
-void handle_signal(int sig) {
-    if (sig == SIGINT) {
-        printf("\nReceived SIGINT. Shutting down server...\n");
-        server_running = 0;
-        close(server_socket);
+    int sent = send(client_socket, response, strlen(response), MSG_DONTWAIT);
+    if (sent < 0) {
+        perror("Error sending response");
     }
-}
 
+cleanup:
+    close(client_socket);
+    free(client);
+    pthread_exit(NULL);
+}
 int main() {
     struct sockaddr_in server_addr;
     socklen_t size;
@@ -137,11 +114,13 @@ int main() {
     size = sizeof(server_addr);
     printf("=> Looking for clients...\n");
 
-    listen(server_socket, 5);
+    if (listen(server_socket, 5) < 0) {
+        perror("Error listening for connections");
+        exit(EXIT_FAILURE);
+    }
 
     signal(SIGINT, handle_signal);
 
-    pthread_t tid;
     while (server_running) {
         client_info *client = malloc(sizeof(client_info));
         client->client_socket = accept(server_socket, (struct sockaddr*)&client->client_addr, &size);
@@ -158,6 +137,7 @@ int main() {
 
         printf("=> Connected with the client, you are good to go...\n");
 
+        pthread_t tid;
         if (pthread_create(&tid, NULL, handle_client, (void *)client) != 0) {
             perror("Could not create thread");
             free(client);
@@ -173,3 +153,4 @@ int main() {
 
     return 0;
 }
+
