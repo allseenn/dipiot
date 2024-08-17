@@ -11,6 +11,8 @@
 #define PORT 8080
 #define BUF_SIZE 1024
 
+void handle_signal(int sig);
+
 typedef struct {
     int client_socket;
     struct sockaddr_in client_addr;
