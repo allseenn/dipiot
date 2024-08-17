@@ -17,24 +17,12 @@ typedef struct {
 
 void *handle_client(void *arg) {
     client_info *client = (client_info *)arg;
-    char buffer[BUF_SIZE];
     int client_socket = client->client_socket;
-    
-    FILE *fp;
-    char line[99];
-    
-    while (1) {
-        int result = recv(client_socket, buffer, BUF_SIZE, 0);
-        if (result < 0) {
-            printf("\n\n=> Connection terminated error %d with IP %s\n", result, inet_ntoa(client->client_addr.sin_addr));
-            break;
-        } else if (result == 0) {
-            printf("\n\n=> Connection closed by client IP %s\n", inet_ntoa(client->client_addr.sin_addr));
-            break;
-        }
 
-        buffer[result] = '\0';
-    
+    while (1) {
+        FILE *fp;
+        char line[99];
+
         fp = fopen("/tmp/bsec", "r");
         if (fp == NULL) {
             printf("Error opening file /tmp/bsec\n");
@@ -46,9 +34,9 @@ void *handle_client(void *arg) {
             fclose(fp);
             break;
         }
-        
+
         fclose(fp);
-        
+
         float arr[12] = {0};
         int arr_i = 0;
         char *token = strtok(line, " ");
@@ -56,22 +44,23 @@ void *handle_client(void *arg) {
             arr[arr_i++] = atof(token);
             token = strtok(NULL, " ");
         }
-        
+
         int rad[2];
         char cmd[100];
-        FILE *fp;
-        char line[50];
+        FILE *fp_rad;
+        char rad_line[50];
 
         sprintf(cmd, "./rad.sh");
-        fp = popen(cmd, "r");
-        if (fp == NULL) {
+        fp_rad = popen(cmd, "r");
+        if (fp_rad == NULL) {
             printf("Failed to run command\n");
             break;
         }
-        while (fgets(line, sizeof(line), fp) != NULL) {
-            sscanf(line, "%d %d", &rad[0], &rad[1]);
+
+        while (fgets(rad_line, sizeof(rad_line), fp_rad) != NULL) {
+            sscanf(rad_line, "%d %d", &rad[0], &rad[1]);
         }
-        pclose(fp);
+        pclose(fp_rad);
 
         char response[BUF_SIZE];
         snprintf(response, sizeof(response),
@@ -81,25 +70,35 @@ void *handle_client(void *arg) {
 "<!DOCTYPE HTML>"
 "<html>"
 "  <head>"
-"  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" http-equiv=\"refresh\" content=\"5\">"
+"  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" http-equiv=\"refresh\" content=\"3\">"
 "  </head>"
 "  <h1>ODROID: WEB-MET</h1>"
 "  <table border=\"1\"><tr><th>temp</th>"
 "  <th>raw_temp</th>"
-"  <th>humidity</td>"
-"  <th>raw_hum</td>"
-"  <th>press</td>"
-"  <th>gas</td>"
-"  <th>ceCO2</td>"
-"  <th>bVOC</td>"
-"  <th>IAQ</td>"
-"  <th>SIAQ</td>"
-"  <th>IAQ_ACC</td>"
-"  <th>status</td></tr>"
-"  <tr><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.2f</td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%d</td><td>%d</td></tr>"
-"  <tr><td>C</td><td>C</td><td>%</td><td>%</td><td>mmHg</td><td>KOM</td><td>ppm</td><td>ppm</td><td>index</td><td>index</td><td>num</td><td>num</td><td>&mu;R/h</td><td>&mu;R/h</td></tr></table>"
+"  <th>humidity</th>"
+"  <th>raw_hum</th>"
+"  <th>press</th>"
+"  <th>gas</th>"
+"  <th>ceCO2</th>"
+"  <th>bVOC</th>"
+"  <th>IAQ</th>"
+"  <th>SIAQ</th>"
+"  <th>IAQ_ACC</th>"
+"  <th>status</th>"
+"  <th>Dynamic Rad</th>"
+"  <th>Static Rad</th></tr>"
+"  <tr><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%.1f</td>"
+"  <td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.2f</td>"
+"  <td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.0f</td>"
+"  <td>%d</td><td>%d</td></tr>"
+"  <tr><td>C&deg;</td><td>C&deg;</td><td>&percnt;</td><td>&percnt;</td>"
+"  <td>mmHg</td><td>KOM</td><td>ppm</td><td>ppm</td>"
+"  <td>index</td><td>index</td><td>num</td><td>num</td>"
+"  <td>&mu;R/h</td><td>&mu;R/h</td></tr></table>"
 "</html>", arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], arr[9], arr[10], arr[11], rad[0], rad[1]);
+        
         send(client_socket, response, strlen(response), 0);
+        sleep(3);
     }
 
     close(client_socket);
@@ -131,11 +130,10 @@ int main() {
     printf("=> Socket server has been created...\n");
 
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htons(INADDR_ANY);
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     server_addr.sin_port = htons(PORT);
 
-    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0  
-    ) {
+    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
         perror("Error binding connection");
         exit(EXIT_FAILURE);
     }
@@ -179,4 +177,3 @@ int main() {
 
     return 0;
 }
-
