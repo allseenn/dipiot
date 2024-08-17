@@ -10,5 +10,5 @@ clean:
 	rm -f $(TARGET)
 
 install: 
-	chmod 777 ${TARGET} *.sh
+	chmod 777 ${TARGET} *.sh *.html
 	sudo cp ${TARGET} *.sh /usr/local/sbin
