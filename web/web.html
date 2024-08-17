@@ -1,5 +1,6 @@
 <!DOCTYPE HTML>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,78 +8,85 @@
     <script>
         function updateData() {
             fetch('/data')
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('temp').textContent = data.temp.toFixed(1);
-                document.getElementById('raw_temp').textContent = data.raw_temp.toFixed(1);
-                document.getElementById('humidity').textContent = data.humidity.toFixed(1);
-                document.getElementById('raw_hum').textContent = data.raw_hum.toFixed(1);
-                document.getElementById('press').textContent = data.press.toFixed(0);
-                document.getElementById('gas').textContent = data.gas.toFixed(0);
-                document.getElementById('ecCO2').textContent = data.ecCO2.toFixed(0);
-                document.getElementById('bVOC').textContent = data.bVOC.toFixed(2);
-                document.getElementById('IAQ').textContent = data.IAQ.toFixed(0);
-                document.getElementById('SIAQ').textContent = data.SIAQ.toFixed(0);
-                document.getElementById('IAQ_ACC').textContent = data.IAQ_ACC.toFixed(0);
-                document.getElementById('status').textContent = data.status.toFixed(0);
-                document.getElementById('dyn_rad').textContent = data.dyn_rad;
-                document.getElementById('stat_rad').textContent = data.stat_rad;
-            });
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('temp').textContent = data.temp.toFixed(1);
+                    document.getElementById('raw_temp').textContent = data.raw_temp.toFixed(1);
+                    document.getElementById('humidity').textContent = data.humidity.toFixed(1);
+                    document.getElementById('raw_hum').textContent = data.raw_hum.toFixed(1);
+                    document.getElementById('press').textContent = data.press.toFixed(0);
+                    document.getElementById('gas').textContent = data.gas.toFixed(0);
+                    document.getElementById('ecCO2').textContent = data.ecCO2.toFixed(0);
+                    document.getElementById('bVOC').textContent = data.bVOC.toFixed(2);
+                    document.getElementById('IAQ').textContent = data.IAQ.toFixed(0);
+                    document.getElementById('SIAQ').textContent = data.SIAQ.toFixed(0);
+                    document.getElementById('IAQ_ACC').textContent = data.IAQ_ACC.toFixed(0);
+                    document.getElementById('status').textContent = data.status.toFixed(0);
+                    document.getElementById('dyn_rad').textContent = data.dyn_rad;
+                    document.getElementById('stat_rad').textContent = data.stat_rad;
+                });
         }
         setInterval(updateData, 3000);
     </script>
 </head>
+
 <body onload="updateData()">
     <h1>ODROID: WEB-MET</h1>
-    <table border="1">
-        <tr>
-            <th>&#127777;</th>
-            <th>&#127777;<sub>raw</sub></th>
-            <th>&#128167;</th>
-            <th>&#128167;<sub>raw</sub></th>
-            <th>&#128137;</th>
-            <th>&#128067;</th>
-            <th>CO<sub>2</sub></th>
-            <th>VOC</th>
-            <th>&#128663;<sub>IAQ</sub></th>
-            <th>&#127968;<sub>IAQ</sub></th>
-            <th>&#9878;<sub>IAQ</sub></th>
-            <th>&#128681;</th>
-            <th>&#9762;&#128663;</th>
-            <th>&#9762;&#127968;</th>
-        </tr>
-        <tr>
-            <td id="temp"></td>
-            <td id="raw_temp"></td>
-            <td id="humidity"></td>
-            <td id="raw_hum"></td>
-            <td id="press"></td>
-            <td id="gas"></td>
-            <td id="ecCO2"></td>
-            <td id="bVOC"></td>
-            <td id="IAQ"></td>
-            <td id="SIAQ"></td>
-            <td id="IAQ_ACC"></td>
-            <td id="status"></td>
-            <td id="dyn_rad"></td>
-            <td id="stat_rad"></td>
-        </tr>
-        <tr>
-            <td>C&deg;</td>
-            <td>C&deg;</td>
-            <td>&percnt;</td>
-            <td>&percnt;</td>
-            <td>mmHg</td>
-            <td>K&ohm;</td>
-            <td>ppm</td>
-            <td>ppm</td>
-            <td>int</td>
-            <td>int</td>
-            <td>int</td>
-            <td>int</td>
-            <td>&mu;R/h</td>
-            <td>&mu;R/h</td>
-        </tr>
-    </table>
+    <div class="temp">&#127777;
+        <p id="temp"></p>
+        C&deg;
+    </div>
+    <div class="raw_temp">&#127777;<sub>raw</sub>
+        <p id="raw_temp"></p>
+        C&deg;
+    </div>
+    <div class="humidity">&#128167;
+        <p id="humidity"></p>
+        &percnt;
+    </div>
+    <div class="raw_hum">&#128167;<sub>raw</sub>
+        <p id="raw_hum"></p>
+        &percnt;
+    </div>
+    <div class="press">&#128137;
+        <p id="press"></p>
+        mmHg
+    </div>
+    <div class="gas">&#128067;
+        <p id="gas"></p>
+        K&ohm;
+    </div>
+    <div class="ecCO2">CO<sub>2</sub>
+        <p id="ecCO2"></p>
+        ppm
+    </div>
+    <div class="bVOC">VOC
+        <p id="bVOC"></p>
+        ppm
+    </div>
+    <div class="IAQ">&#128663;<sub>IAQ</sub>
+        <p id="IAQ"></p>
+        int
+    </div>
+    <div class="SIAQ">&#127968;<sub>IAQ</sub>
+        <p id="SIAQ"></p>
+        int
+    </div>
+    <div class="IAQ_ACC">&#9878;<sub>IAQ</sub>
+        <p id="IAQ_ACC"></p>
+        int
+    </div>
+    <div class="status">&#128681;
+        <p id="status"></p>
+        int
+    </div>
+    <div class="dyn_rad">&#9762;&#128663;
+        <p id="dyn_rad"></p>
+        &mu;R/h
+    </div>
+    <div class="stat_rad">&#9762;&#127968;
+        <p id="stat_rad"></p>
+        &mu;R/h
+    </div>
 </body>
 </html>
