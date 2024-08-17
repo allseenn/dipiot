@@ -12,6 +12,9 @@
 #define BUF_SIZE 1024
 #define MAX_RETRIES 3
 
+void *handle_client(void *arg);
+void handle_signal(int sig);
+
 typedef struct {
     int client_socket;
     struct sockaddr_in client_addr;
