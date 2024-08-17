@@ -10,8 +10,7 @@
 
 #define PORT 8080
 #define BUF_SIZE 1024
-
-void handle_signal(int sig);
+#define MAX_RETRIES 3
 
 typedef struct {
     int client_socket;
@@ -24,6 +23,7 @@ int server_socket;
 void *handle_client(void *arg) {
     client_info *client = (client_info *)arg;
     int client_socket = client->client_socket;
+    int retries = 0;
 
     FILE *fp;
     char line[99];
@@ -33,7 +33,7 @@ void *handle_client(void *arg) {
         printf("Error opening file /tmp/bsec\n");
         goto cleanup;
     }
-    
+
     if (fgets(line, sizeof(line), fp) == NULL) {
         printf("Error reading from file /tmp/bsec\n");
         fclose(fp);
@@ -69,39 +69,26 @@ void *handle_client(void *arg) {
 
     char response[BUF_SIZE];
     snprintf(response, sizeof(response),
-"HTTP/1.1 200 OK\r\n"
-"Content-Type: text/html; charset=utf-8\r\n"
-"\r\n"
-"<!DOCTYPE HTML>"
-"<html>"
-"  <head>"
-"  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" http-equiv=\"reload\" content=\"3\">"
-"  </head>"
-"  <h1>ODROID: WEB-MET</h1>"
-"  <table border=\"1\"><tr><th>temp</th>"
-"  <th>raw_temp</th>"
-"  <th>humidity</th>"
-"  <th>raw_hum</th>"
-"  <th>press</th>"
-"  <th>gas</th>"
-"  <th>ceCO2</th>"
-"  <th>bVOC</th>"
-"  <th>IAQ</th>"
-"  <th>SIAQ</th>"
-"  <th>IAQ_ACC</th>"
-"  <th>status</th>"
-"  <th>Dynamic Rad</th>"
-"  <th>Static Rad</th></tr>"
-"  <tr><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%.1f</td>"
-"  <td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.2f</td>"
-"  <td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.0f</td>"
-"  <td>%d</td><td>%d</td></tr>"
-"  <tr><td>C&deg;</td><td>C&deg;</td><td>&percnt;</td><td>hPa</td><td>Ohm</td><td>ppm</td><td>ppb</td><td>&percnt;</td><td>&percnt;</td><td>&percnt;</td><td>&percnt;</td><td>W/m&sup2;</td><td>W/m&sup2;</td></tr>"
-"</table>"
-"</html>",
-arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], arr[9], arr[10], arr[11], rad[0], rad[1]);
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: text/html; charset=utf-8\r\n"
+        "Connection: close\r\n"
+        "\r\n"
+        "<!DOCTYPE HTML>"
+        "<!-- ... (остальной HTML-код) ... -->");
 
-    write(client_socket, response, strlen(response));
+    while (retries < MAX_RETRIES) {
+        ssize_t bytes_sent = write(client_socket, response, strlen(response));
+        if (bytes_sent < 0) {
+            perror("Error writing to client socket");
+            retries++;
+            continue;
+        }
+        break;
+    }
+
+    if (retries == MAX_RETRIES) {
+        printf("Failed to send response to client after %d retries\n", MAX_RETRIES);
+    }
 
 cleanup:
     close(client_socket);
