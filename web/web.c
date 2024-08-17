@@ -15,6 +15,8 @@ typedef struct {
     struct sockaddr_in client_addr;
 } client_info;
 
+bool debug_mode = false;  // Global flag for debug mode
+
 void send_html_response(int client_socket) {
     char response[BUF_SIZE];
     snprintf(response, sizeof(response),
@@ -105,12 +107,12 @@ void send_json_data(int client_socket) {
 
     fp = fopen("/tmp/bsec", "r");
     if (fp == NULL) {
-        printf("Error opening file /tmp/bsec\n");
+        if (debug_mode) printf("Error opening file /tmp/bsec\n");
         return;
     }
     
     if (fgets(line, sizeof(line), fp) == NULL) {
-        printf("Error reading from file /tmp/bsec\n");
+        if (debug_mode) printf("Error reading from file /tmp/bsec\n");
         fclose(fp);
         return;
     }
@@ -130,10 +132,10 @@ void send_json_data(int client_socket) {
     FILE *fp_rad;
     char rad_line[50];
 
-    sprintf(cmd, "./rad.sh");
+    sprintf(cmd, "rad.sh");
     fp_rad = popen(cmd, "r");
     if (fp_rad == NULL) {
-        printf("Failed to run command\n");
+        if (debug_mode) printf("Failed to run command\n");
         return;
     }
 
@@ -165,7 +167,7 @@ void *handle_client(void *arg) {
     char request[BUF_SIZE];
     int received = recv(client_socket, request, BUF_SIZE - 1, 0);
     if (received < 0) {
-        perror("Error receiving request");
+        if (debug_mode) perror("Error receiving request");
         close(client_socket);
         free(client);
         pthread_exit(NULL);
@@ -188,23 +190,31 @@ int server_socket;
 
 void handle_signal(int sig) {
     if (sig == SIGINT) {
-        printf("\nReceived SIGINT. Shutting down server...\n");
+        if (debug_mode) printf("\nReceived SIGINT. Shutting down server...\n");
         server_running = 0;
         close(server_socket);
     }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    // Check for debug flag
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--debug") == 0) {
+            debug_mode = true;
+            break;
+        }
+    }
+
     struct sockaddr_in server_addr;
     socklen_t size;
 
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket < 0) {
         perror("Error establishing socket");
-        exit(EXIT_FAILURE);
+                exit(EXIT_FAILURE);
     }
 
-    printf("=> Socket server has been created...\n");
+    if (debug_mode) printf("=> Socket server has been created...\n");
 
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -216,14 +226,14 @@ int main() {
     }
 
     size = sizeof(server_addr);
-    printf("=> Looking for clients...\n");
+    if (debug_mode) printf("=> Looking for clients...\n");
 
     listen(server_socket, 5);
 
     signal(SIGINT, handle_signal);
 
     pthread_t tid;
-       while (server_running) {
+    while (server_running) {
         client_info *client = malloc(sizeof(client_info));
         client->client_socket = accept(server_socket, (struct sockaddr*)&client->client_addr, &size);
 
@@ -237,7 +247,7 @@ int main() {
             continue;
         }
 
-        printf("=> Connected with the client, you are good to go...\n");
+        if (debug_mode) printf("=> Connected with the client, you are good to go...\n");
 
         if (pthread_create(&tid, NULL, handle_client, (void *)client) != 0) {
             perror("Could not create thread");
@@ -248,10 +258,14 @@ int main() {
         pthread_detach(tid);
     }
 
-    printf("Closing server socket...\n");
+    if (debug_mode) {
+        printf("Closing server socket...\n");
+        printf("Goodbye...\n");
+    }
+
     close(server_socket);
-    printf("Goodbye...\n");
 
     return 0;
 }
+
 
