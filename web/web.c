@@ -8,82 +8,117 @@
 #include <signal.h>
 
 #define PORT 8080
-#define BUF_SIZE 1024
+#define BUF_SIZE 8096
 
 typedef struct {
     int client_socket;
     struct sockaddr_in client_addr;
 } client_info;
 
-void *handle_client(void *arg) {
-    client_info *client = (client_info *)arg;
-    char buffer[BUF_SIZE];
-    int client_socket = client->client_socket;
-    
+bool debug_mode = false;  // Global flag for debug mode
+
+void send_html_response(int client_socket) {
+    char response[BUF_SIZE];
+    FILE *html_file = fopen("/usr/local/sbin/web.html", "r");
+
+    if (html_file == NULL) {
+        perror("Error opening web.html");
+        snprintf(response, sizeof(response),
+                 "HTTP/1.1 500 Internal Server Error\r\n"
+                 "Content-Type: text/plain\r\n"
+                 "\r\n"
+                 "500 Internal Server Error: Could not open web.html file.");
+        send(client_socket, response, strlen(response), 0);
+        return;
+    }
+
+    snprintf(response, sizeof(response), "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\n");
+    send(client_socket, response, strlen(response), 0);
+
+    while (fgets(response, sizeof(response), html_file) != NULL) {
+        send(client_socket, response, strlen(response), 0);
+    }
+
+    fclose(html_file);
+}
+
+void send_json_data(int client_socket) {
     FILE *fp;
     char line[99];
-    
-    while (1) {
-        int result = recv(client_socket, buffer, BUF_SIZE, 0);
-        if (result < 0) {
-            printf("\n\n=> Connection terminated error %d with IP %s\n", result, inet_ntoa(client->client_addr.sin_addr));
-            break;
-        } else if (result == 0) {
-            printf("\n\n=> Connection closed by client IP %s\n", inet_ntoa(client->client_addr.sin_addr));
-            break;
-        }
 
-        buffer[result] = '\0';
+    fp = fopen("/tmp/bsec", "r");
+    if (fp == NULL) {
+        if (debug_mode) printf("Error opening file /tmp/bsec\n");
+        return;
+    }
     
-        fp = fopen("/tmp/bsec", "r");
-        if (fp == NULL) {
-            printf("Error opening file /tmp/bsec\n");
-            break;
-        }
-        
-        if (fgets(line, sizeof(line), fp) == NULL) {
-            printf("Error reading from file /tmp/bsec\n");
-            fclose(fp);
-            break;
-        }
-        
+    if (fgets(line, sizeof(line), fp) == NULL) {
+        if (debug_mode) printf("Error reading from file /tmp/bsec\n");
         fclose(fp);
-        
-        float arr[12] = {0};
-        int arr_i = 0;
-        char *token = strtok(line, " ");
-        while (token != NULL) {
-            arr[arr_i++] = atof(token);
-            token = strtok(NULL, " ");
-        }
-        
-        char response[BUF_SIZE];
-        snprintf(response, sizeof(response),
-"HTTP/1.1 200 OK\r\n"
-"Content-Type: text/html; charset=utf-8\r\n"
-"\r\n"
-"<!DOCTYPE HTML>"
-"<html>"
-"  <head>"
-"  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" http-equiv=\"refresh\" content=\"5\">"
-"  </head>"
-"  <h1>ODROID: WEB-MET</h1>"
-"  <table border=\"1\"><tr><th>temp</th>"
-"  <th>raw_temp</th>"
-"  <th>humidity</td>"
-"  <th>raw_hum</td>"
-"  <th>press</td>"
-"  <th>gas</td>"
-"  <th>ceCO2</td>"
-"  <th>bVOC</td>"
-"  <th>IAQ</td>"
-"  <th>SIAQ</td>"
-"  <th>IAQ_ACC</td>"
-"  <th>status</td></tr>"
-"  <tr><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.2f</td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.0f</td></tr>"
-"  <tr><td>C</td><td>C</td><td>%</td><td>%</td><td>mmHg</td><td>KOM</td><td>ppm</td><td>ppm</td><td>index</td><td>index</td><td>num</td><td>num</td></tr></table>"
-"</html>", arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], arr[9], arr[10], arr[11]);
-        send(client_socket, response, strlen(response), 0);
+        return;
+    }
+
+    fclose(fp);
+
+    float arr[12] = {0};
+    int arr_i = 0;
+    char *token = strtok(line, " ");
+    while (token != NULL) {
+        arr[arr_i++] = atof(token);
+        token = strtok(NULL, " ");
+    }
+
+    int rad[2];
+    char cmd[100];
+    FILE *fp_rad;
+    char rad_line[50];
+
+    sprintf(cmd, "rad.sh");
+    fp_rad = popen(cmd, "r");
+    if (fp_rad == NULL) {
+        if (debug_mode) printf("Failed to run command\n");
+        return;
+    }
+
+    while (fgets(rad_line, sizeof(rad_line), fp_rad) != NULL) {
+        sscanf(rad_line, "%d %d", &rad[0], &rad[1]);
+    }
+    pclose(fp_rad);
+
+    char json_response[BUF_SIZE];
+    snprintf(json_response, sizeof(json_response),
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: application/json\r\n"
+        "\r\n"
+        "{"
+        "\"temp\": %.1f, \"raw_temp\": %.1f, \"humidity\": %.1f, \"raw_hum\": %.1f,"
+        "\"press\": %.2f, \"gas\": %.0f, \"ecCO2\": %.0f, \"bVOC\": %.2f,"
+        "\"IAQ\": %.0f, \"SIAQ\": %.0f, \"IAQ_ACC\": %.0f, \"status\": %.0f,"
+        "\"dyn_rad\": %d, \"stat_rad\": %d"
+        "}", arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7],
+        arr[8], arr[9], arr[10], arr[11], rad[0], rad[1]);
+
+    send(client_socket, json_response, strlen(json_response), 0);
+}
+
+void *handle_client(void *arg) {
+    client_info *client = (client_info *)arg;
+    int client_socket = client->client_socket;
+
+    char request[BUF_SIZE];
+    int received = recv(client_socket, request, BUF_SIZE - 1, 0);
+    if (received < 0) {
+        if (debug_mode) perror("Error receiving request");
+        close(client_socket);
+        free(client);
+        pthread_exit(NULL);
+    }
+    request[received] = '\0';
+
+    if (strstr(request, "GET /data") != NULL) {
+        send_json_data(client_socket);
+    } else {
+        send_html_response(client_socket);
     }
 
     close(client_socket);
@@ -96,13 +131,21 @@ int server_socket;
 
 void handle_signal(int sig) {
     if (sig == SIGINT) {
-        printf("\nReceived SIGINT. Shutting down server...\n");
+        if (debug_mode) printf("\nReceived SIGINT. Shutting down server...\n");
         server_running = 0;
         close(server_socket);
     }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    // Check for debug flag
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--debug") == 0) {
+            debug_mode = true;
+            break;
+        }
+    }
+
     struct sockaddr_in server_addr;
     socklen_t size;
 
@@ -112,20 +155,19 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    printf("=> Socket server has been created...\n");
+    if (debug_mode) printf("=> Socket server has been created...\n");
 
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htons(INADDR_ANY);
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     server_addr.sin_port = htons(PORT);
 
-    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0  
-    ) {
+    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
         perror("Error binding connection");
         exit(EXIT_FAILURE);
     }
 
     size = sizeof(server_addr);
-    printf("=> Looking for clients...\n");
+    if (debug_mode) printf("=> Looking for clients...\n");
 
     listen(server_socket, 5);
 
@@ -146,7 +188,7 @@ int main() {
             continue;
         }
 
-        printf("=> Connected with the client, you are good to go...\n");
+        if (debug_mode) printf("=> Connected with the client, you are good to go...\n");
 
         if (pthread_create(&tid, NULL, handle_client, (void *)client) != 0) {
             perror("Could not create thread");
@@ -157,10 +199,12 @@ int main() {
         pthread_detach(tid);
     }
 
-    printf("Closing server socket...\n");
+    if (debug_mode) {
+        printf("Closing server socket...\n");
+        printf("Goodbye...\n");
+    }
+
     close(server_socket);
-    printf("Goodbye...\n");
 
     return 0;
 }
-
