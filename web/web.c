@@ -44,7 +44,7 @@ void send_html_response(int client_socket) {
 
 void send_json_data(int client_socket) {
     FILE *fp;
-    char line[99];
+    char line[101];
 
     fp = fopen("/tmp/bsec", "r");
     if (fp == NULL) {
@@ -68,7 +68,7 @@ void send_json_data(int client_socket) {
         token = strtok(NULL, " ");
     }
 
-    int rad[2];
+    float rad[2] = {0};
     char cmd[100];
     FILE *fp_rad;
     char rad_line[50];
@@ -81,7 +81,7 @@ void send_json_data(int client_socket) {
     }
 
     while (fgets(rad_line, sizeof(rad_line), fp_rad) != NULL) {
-        sscanf(rad_line, "%d %d", &rad[0], &rad[1]);
+        sscanf(rad_line, "%f %f", &rad[0], &rad[1]);
     }
     pclose(fp_rad);
 
@@ -94,7 +94,7 @@ void send_json_data(int client_socket) {
         "\"temp\": %.1f, \"raw_temp\": %.1f, \"humidity\": %.1f, \"raw_hum\": %.1f,"
         "\"press\": %.2f, \"gas\": %.0f, \"ecCO2\": %.0f, \"bVOC\": %.2f,"
         "\"IAQ\": %.0f, \"SIAQ\": %.0f, \"IAQ_ACC\": %.0f, \"status\": %.0f,"
-        "\"dyn_rad\": %d, \"stat_rad\": %d"
+        "\"dyn_rad\": %.1f, \"stat_rad\": %.1f"
         "}", arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7],
         arr[8], arr[9], arr[10], arr[11], rad[0], rad[1]);
 
